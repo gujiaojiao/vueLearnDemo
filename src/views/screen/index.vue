@@ -6,7 +6,9 @@
         <Top></Top>
       </div>
       <div class="bottom">
-        <div class="left">左侧</div>
+        <div class="left">
+          <LeftDataOne></LeftDataOne>
+        </div>
         <div class="middle">
           <Map :tree-data="treeData" class="map"></Map>
           <Line class="line"></Line>
@@ -20,6 +22,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import Top from './components/top/index.vue'
+import LeftDataOne from './components/leftDataOne/index.vue'
 import Map from './components/map/index.vue'
 import Line from './components/line/index.vue'
 // 获取数据大屏展示内容盒子的DOM元素
@@ -66,7 +69,7 @@ window.onresize = () => {
       .left {
         width: 25%;
         height: 100%;
-        background-color: azure;
+        //background-color: azure;
       }
       .middle {
         display: flex;
