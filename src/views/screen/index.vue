@@ -13,7 +13,9 @@
           <Map :tree-data="treeData" class="map"></Map>
           <Line class="line"></Line>
         </div>
-        <div class="right">右侧</div>
+        <div class="right">
+          <RightDataOne></RightDataOne>
+        </div>
       </div>
     </div>
   </div>
@@ -23,6 +25,7 @@
 import { ref, onMounted } from 'vue'
 import Top from './components/top/index.vue'
 import LeftDataOne from './components/leftDataOne/index.vue'
+import RightDataOne from './components/rightDataOne/index.vue'
 import Map from './components/map/index.vue'
 import Line from './components/line/index.vue'
 // 获取数据大屏展示内容盒子的DOM元素
@@ -30,13 +33,13 @@ let screen = ref()
 onMounted(() => {
   screen.value.style.transform = `scale(${getScale()}) translate(-50%,-50%)`
 })
-// // // 定义大屏幕缩放比例
+// 定义大屏幕缩放比例
 function getScale(w = 1920, h = 1080) {
   const ww = window.innerWidth / w
   const wh = window.innerHeight / h
   return ww < wh ? ww : wh
 }
-// //监听视口变化
+// 监听视口变化
 window.onresize = () => {
   screen.value.style.transform = `scale(${getScale()}) translate(-50%,-50%)`
 }
@@ -90,7 +93,7 @@ window.onresize = () => {
       }
       .right {
         width: 25%;
-        // height: 94%;
+        height: 100%;
         // background-color: bisque;
       }
     }

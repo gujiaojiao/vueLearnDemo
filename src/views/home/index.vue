@@ -1,7 +1,7 @@
 <template>
-    <div>
-        <h1>我是一级路由登录成功后的状态</h1>
-    </div>
+  <div>
+    <h1>我是一级路由登录成功后的状态</h1>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -13,6 +13,4 @@
 // })
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

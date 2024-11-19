@@ -51,7 +51,7 @@ import { getTime } from '@/utils/time'
 import useUserStore from '@/store/modules/user'
 import { useRoute } from 'node_modules/vue-router/dist/vue-router'
 // 获取el-form组件
-let loginForms=ref();
+let loginForms = ref()
 // 获取路由
 let $router = useRouter()
 let useStore = useUserStore()
@@ -61,8 +61,8 @@ let loginForm = reactive({ username: 'admin', password: '111111' })
 // 登录按钮回调
 const login = async () => {
   // 保证全部表单在校验通过后再发请求
-  await loginForms.value.validate();
-  
+  await loginForms.value.validate()
+
   // 加载效果开始加载
   loading.value = true
   //  通知仓库发登录请求
@@ -88,13 +88,13 @@ const login = async () => {
   }
 }
 // 自定义校验规则函数
-const validatorPassword=(rule:any,value:any,callback:any)=>{
+const validatorPassword = (rule: any, value: any, callback: any) => {
   // rule:即为校验规则对象
   // value:即为表单元素文本内容
   // 函数：如果符合条件callback放行通过，不符合则注入错误提示信息
-  if(value.length>=6&&value.length<=15){
-    callback();
-  }else{
+  if (value.length >= 6 && value.length <= 15) {
+    callback()
+  } else {
     callback(new Error('账号密码至少为6位，且不超过15位'))
   }
 }
@@ -112,16 +112,17 @@ const rules = {
       min: 5,
       max: 10,
       message: '账号名至少为5位，且不超过10位',
-      trigger: 'change'
-    }
+      trigger: 'change',
+    },
   ],
-  password:[
+  password: [
     {
       // required: true,min: 6,max: 15,message: '密码至少为6位，且不超过15位',trigger: 'change'
       // 自定义校验表单
-      trigger:'change',validator:validatorPassword
-    }
-  ]
+      trigger: 'change',
+      validator: validatorPassword,
+    },
+  ],
 }
 </script>
 

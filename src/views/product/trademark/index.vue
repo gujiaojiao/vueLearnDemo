@@ -63,7 +63,10 @@
             v-model:属性用户控制对话框的显示与隐藏的 true显示 false隐藏
              title:设置对话框左上角标题
         -->
-    <el-dialog v-model="dialogFormVisible" :title="trademarkParams.id ? '修改品牌' : '添加品牌'">
+    <el-dialog
+      v-model="dialogFormVisible"
+      :title="trademarkParams.id ? '修改品牌' : '添加品牌'"
+    >
       <el-form
         style="width: 80%"
         :model="trademarkParams"
@@ -110,10 +113,11 @@
 <script setup lang="ts">
 // 引入组合式API函数ref
 import { ElMessage, UploadProps, formEmits } from 'element-plus'
-import { ref, onMounted, reactive, nextTick} from 'vue'
+import { ref, onMounted, reactive, nextTick } from 'vue'
 import {
   reqHasTrademark,
-  reqAddOrUpdateTrademark,reqDeleteTrademark
+  reqAddOrUpdateTrademark,
+  reqDeleteTrademark,
 } from '@/api/product/trademark'
 import type {
   Records,
@@ -133,10 +137,10 @@ let dialogFormVisible = ref<boolean>(false)
 //定义收集新增品牌数据
 let trademarkParams = reactive<TradeMark>({
   tmName: '',
-  logoUrl: ''
+  logoUrl: '',
 })
 //获取el-form组件实例
-let formRef = ref();
+let formRef = ref()
 //获取已有品牌的接口封装为一个函数:在任何情况下向获取数据,调用次函数即可
 const getHasTrademark = async (pager = 1) => {
   pageNo.value = pager
@@ -148,8 +152,7 @@ const getHasTrademark = async (pager = 1) => {
     //存储已有品牌总个数
     total.value = result.data.total
     trademarkArr.value = result.data.records
-    console.log(trademarkArr);
-    
+    console.log(trademarkArr)
   }
 }
 //组件挂载完毕钩子---发一次请求,获取第一页、一页三个已有品牌数据
@@ -174,37 +177,36 @@ const addTrademark = () => {
   //对话框显示
   dialogFormVisible.value = true
   //清空收集数据
-  trademarkParams.id=0;
+  trademarkParams.id = 0
   trademarkParams.tmName = ''
-  trademarkParams.logoUrl = '';
+  trademarkParams.logoUrl = ''
   //第一种写法:ts的问号语法
-    // formRef.value?.clearValidate('tmName');
-    // formRef.value?.clearValidate('logoUrl');
-    nextTick(() => {
-        formRef.value.clearValidate('tmName');
-        formRef.value.clearValidate('logoUrl');
-    })
+  // formRef.value?.clearValidate('tmName');
+  // formRef.value?.clearValidate('logoUrl');
+  nextTick(() => {
+    formRef.value.clearValidate('tmName')
+    formRef.value.clearValidate('logoUrl')
+  })
 }
-const updateTrademark = (row:TradeMark) => {
+const updateTrademark = (row: TradeMark) => {
   //清空校验规则错误提示信息
-    nextTick(() => {
-        formRef.value.clearValidate('tmName');
-        formRef.value.clearValidate('logoUrl');
-    })
+  nextTick(() => {
+    formRef.value.clearValidate('tmName')
+    formRef.value.clearValidate('logoUrl')
+  })
   //对话框显示
-  dialogFormVisible.value = true;
+  dialogFormVisible.value = true
   //ES6语法合并对象
-  Object.assign(trademarkParams, row);
-  
+  Object.assign(trademarkParams, row)
 }
 const cancel = () => {
   dialogFormVisible.value = false
 }
-const confirm =async () => {
+const confirm = async () => {
   //在你发请求之前,要对于整个表单进行校验
   //调用这个方法进行全部表单相校验,如果校验全部通过，在执行后面的语法
-  await formRef.value.validate();
-  let result: any =await reqAddOrUpdateTrademark(trademarkParams)
+  await formRef.value.validate()
+  let result: any = await reqAddOrUpdateTrademark(trademarkParams)
   console.log(result.code)
   if (result.code == 200) {
     //关闭对话框
@@ -212,7 +214,7 @@ const confirm =async () => {
     // 弹出成功添加的消息
     ElMessage({
       type: 'success',
-      message:  trademarkParams.id ? '修改品牌成功' : '添加品牌成功',
+      message: trademarkParams.id ? '修改品牌成功' : '添加品牌成功',
     })
     //再次发请求获取已有全部的品牌数据
     getHasTrademark(trademarkParams.id ? pageNo.value : 1)
@@ -251,34 +253,32 @@ const beforeAvatarUpload: UploadProps['beforeUpload'] = (rawFile) => {
   }
 }
 //品牌自定义校验规则方法
-const validatorTmName=(rule: any, value: any, callBack: any)=>{
+const validatorTmName = (rule: any, value: any, callBack: any) => {
   //是当表单元素触发blur时候,会触发此方法
-    //自定义校验规则
-    if (value.trim().length >= 2) {
-        callBack();
-    } else {
-        //校验未通过返回的错误的提示信息
-        callBack(new Error('品牌名称位数大于等于两位'))
-    }
+  //自定义校验规则
+  if (value.trim().length >= 2) {
+    callBack()
+  } else {
+    //校验未通过返回的错误的提示信息
+    callBack(new Error('品牌名称位数大于等于两位'))
+  }
 }
-const validatorLogoUrl=(rule: any, value: any, callBack: any)=>{
+const validatorLogoUrl = (rule: any, value: any, callBack: any) => {
   //如果图片上传
-    if (value) {
-        callBack();
-    } else {
-        callBack(new Error('LOGO图片务必上传'))
-    }
+  if (value) {
+    callBack()
+  } else {
+    callBack(new Error('LOGO图片务必上传'))
+  }
 }
 // 表单校验规则对象
-const rules={
-   tmName: [
-        //required:这个字段务必校验,表单项前面出来五角星
-        //trigger:代表触发校验规则时机[blur、change]
-        { required: true, trigger: 'blur', validator: validatorTmName }
-    ],
-    logoUrl: [
-        { required: true, validator: validatorLogoUrl }
-    ]
+const rules = {
+  tmName: [
+    //required:这个字段务必校验,表单项前面出来五角星
+    //trigger:代表触发校验规则时机[blur、change]
+    { required: true, trigger: 'blur', validator: validatorTmName },
+  ],
+  logoUrl: [{ required: true, validator: validatorLogoUrl }],
 }
 //图片上传成功钩子
 const handleAvatarSuccess: UploadProps['onSuccess'] = (
@@ -289,27 +289,29 @@ const handleAvatarSuccess: UploadProps['onSuccess'] = (
   //收集上传图片的地址,添加一个新的品牌的时候带给服务器
   trademarkParams.logoUrl = response.data
   //图片上传成功,清除掉对应图片校验结果
-  formRef.value.clearValidate('logoUrl');
+  formRef.value.clearValidate('logoUrl')
 }
 
 // 删除某一id的品牌————气泡确认框确定按钮的回调
-const removeTradeMark=async(id:number)=>{
+const removeTradeMark = async (id: number) => {
   //点击确定按钮删除已有品牌请求
-  let result=await reqDeleteTrademark(id);
+  let result = await reqDeleteTrademark(id)
   if (result.code == 200) {
-        //删除成功提示信息
-        ElMessage({
-            type: 'success',
-            message: '删除品牌成功'
-        });
-        //再次获取已有的品牌数据
-        getHasTrademark(trademarkArr.value.length > 1 ? pageNo.value : pageNo.value - 1);
-    } else {
-        ElMessage({
-            type: 'error',
-            message: '删除品牌失败'
-        })
-    }
+    //删除成功提示信息
+    ElMessage({
+      type: 'success',
+      message: '删除品牌成功',
+    })
+    //再次获取已有的品牌数据
+    getHasTrademark(
+      trademarkArr.value.length > 1 ? pageNo.value : pageNo.value - 1,
+    )
+  } else {
+    ElMessage({
+      type: 'error',
+      message: '删除品牌失败',
+    })
+  }
 }
 </script>
 

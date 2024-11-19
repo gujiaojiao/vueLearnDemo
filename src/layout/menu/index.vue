@@ -63,10 +63,9 @@ const goRoute = (vc: any) => {
   $router.push(vc.index)
 }
 </script>
-<script  lang="ts">
+<script lang="ts">
 export default {
   name: 'Menu',
 }
 </script>
-<style scoped>
-</style>
+<style scoped></style>

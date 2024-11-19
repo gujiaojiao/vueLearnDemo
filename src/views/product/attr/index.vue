@@ -43,7 +43,11 @@
               icon="Edit"
               @click="updateAttr(row)"
             ></el-button>
-            <el-popconfirm :title="`你确定删除${row.attrName}?`" width="200px" @confirm="deleteAttr(row.id)">
+            <el-popconfirm
+              :title="`你确定删除${row.attrName}?`"
+              width="200px"
+              @confirm="deleteAttr(row.id)"
+            >
               <template #reference>
                 <el-button
                   type="primary"
@@ -91,7 +95,7 @@
           <!-- row:即为当前属性值对象 -->
           <template #="{ row, $index }">
             <el-input
-              :ref="(vc: any) => inputArr[$index] = vc"
+              :ref="(vc: any) => (inputArr[$index] = vc)"
               @blur="toLook(row, $index)"
               v-if="row.flag"
               size="small"
@@ -128,7 +132,7 @@
 <script setup lang="ts">
 // 组合式API函数watch
 import { watch, ref, reactive, nextTick } from 'vue'
-import { reqAttr, reqAddOrUpdateArr,reqRemoveAttr } from '@/api/product/attr'
+import { reqAttr, reqAddOrUpdateArr, reqRemoveAttr } from '@/api/product/attr'
 import type { Attr, AttrValue } from '@/api/product/attr/type'
 // 获取分类仓库
 import useCategoryStore from '@/store/modules/category'
@@ -266,25 +270,24 @@ const toEdit = (row: AttrValue, $index: number) => {
   })
 }
 // 删除某一id的品牌————气泡确认框确定按钮的回调
-const deleteAttr=async(attrId:number)=>{
+const deleteAttr = async (attrId: number) => {
   //点击确定按钮删除已有品牌请求
-  let result=await reqRemoveAttr(attrId);
+  let result = await reqRemoveAttr(attrId)
   if (result.code == 200) {
-        //删除成功提示信息
-        ElMessage({
-            type: 'success',
-            message: '删除成功'
-        });
-        //再次获取已有的品牌数据
-        getAttr();
-    } else {
-        ElMessage({
-            type: 'error',
-            message: '删除失败'
-        })
-    }
+    //删除成功提示信息
+    ElMessage({
+      type: 'success',
+      message: '删除成功',
+    })
+    //再次获取已有的品牌数据
+    getAttr()
+  } else {
+    ElMessage({
+      type: 'error',
+      message: '删除失败',
+    })
+  }
 }
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
