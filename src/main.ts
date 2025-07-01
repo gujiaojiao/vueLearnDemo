@@ -14,6 +14,8 @@ import '@/styles/index.scss'
 import router from '@/router'
 // 引入仓库
 import pinia from './store'
+// 引入leaflet地图组件库
+import 'leaflet/dist/leaflet.css'
 // createApp(App).mount('#app')
 //main.ts是入口文件
 //获取应用实例对象

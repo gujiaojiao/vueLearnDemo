@@ -1,8 +1,8 @@
 <template>
   <div class="login_container">
     <el-row>
-      <el-col :span="12" :xs="0"></el-col>
-      <el-col :span="12" :xs="24">
+      <el-col :span="14" :xs="0"></el-col>
+      <el-col :span="8" :xs="24">
         <el-form
           class="login_form"
           :model="loginForm"
@@ -10,7 +10,7 @@
           ref="loginForms"
         >
           <h1>Hello</h1>
-          <h2>欢迎来到硅谷甄选</h2>
+          <h2>欢迎来到响当当</h2>
           <el-form-item prop="username">
             <el-input
               :prefix-icon="User"

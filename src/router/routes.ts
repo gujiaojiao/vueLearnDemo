@@ -14,7 +14,7 @@ export const constantRoute = [
   {
     // 登录成功以后展示数据路由
     path: '/',
-    // component:()=>import('@/views/home/index.vue'),
+    // component: () => import('@/views/home/index.vue'),
     component: () => import('@/layout/index.vue'),
     name: 'layout',
     meta: {
@@ -65,6 +65,17 @@ export const constantRoute = [
       title: '数据大屏',
       hidden: false,
       icon: 'Platform',
+    },
+  },
+  {
+    // leaflet地图
+    path: '/leaflet',
+    component: () => import('@/views/leafLetData/index.vue'),
+    name: 'Leaflet',
+    meta: {
+      title: 'leaflet地图',
+      hidden: false,
+      icon: 'LocationInformation',
     },
   },
   {

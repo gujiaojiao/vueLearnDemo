@@ -29,8 +29,8 @@ let useUserStore = defineStore('User', {
     // 用户登录的方法
     async userLogin(data: loginFormData) {
       // 登录请求
-      let result: loginResponseData = await reqLogin(data)
-      console.log(result)
+      const result: loginResponseData = await reqLogin(data)
+      console.log('登录结果', result)
       // 成功200->token
       if (result.code === 200) {
         // pinia仓库存储token
