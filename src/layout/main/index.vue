@@ -2,13 +2,13 @@
   <!-- 路由组件出口的位置 -->
   <router-view v-slot="{ Component, route }">
     <!-- <transition name="fade" mode="out-in"> -->
-      <!-- 渲染layout一级路由组件的子路由 -->
-      <!-- 缓存 -->
-      <keep-alive>
-        <component :is="Component" v-if="flag" :key="route.fullPath" />
-      </keep-alive>
+    <!-- 渲染layout一级路由组件的子路由 -->
+    <!-- 缓存 -->
+    <keep-alive>
+      <component :is="Component" v-if="flag" :key="route.fullPath" />
+    </keep-alive>
     <!-- </transition> -->
-  </router-view> 
+  </router-view>
 </template>
 
 <script setup lang="ts">

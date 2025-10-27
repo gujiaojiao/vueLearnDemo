@@ -79,6 +79,17 @@ export const constantRoute = [
     },
   },
   {
+    //threejs三维地图
+    path: '/threejs',
+    component: () => import('@/views/threejs/index.vue'),
+    name: 'Threejs',
+    meta: {
+      title: 'threejs三维地图',
+      hidden: false,
+      icon: 'Platform',
+    },
+  },
+  {
     // 权限管理路由
     path: '/acl',
     component: () => import('@/layout/index.vue'),

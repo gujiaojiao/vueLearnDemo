@@ -51,14 +51,14 @@ const initMap = () => {
     },
   ).addTo(map)
 
-//   L.tileLayer(
-//     `http://t{s}.tianditu.gov.cn/cva_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cva&tileMatrixSet=w&TileMatrix={z}&TileRow={y}&TileCol={x}&style=default&format=tiles&tk=${mapKey}`,
-//     {
-//       maxZoom: 19,
-//       // 子域名
-//       subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
-//     },
-//   ).addTo(map)
+  //   L.tileLayer(
+  //     `http://t{s}.tianditu.gov.cn/cva_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cva&tileMatrixSet=w&TileMatrix={z}&TileRow={y}&TileCol={x}&style=default&format=tiles&tk=${mapKey}`,
+  //     {
+  //       maxZoom: 19,
+  //       // 子域名
+  //       subdomains: ['0', '1', '2', '3', '4', '5', '6', '7'],
+  //     },
+  //   ).addTo(map)
 
   return map
 }
