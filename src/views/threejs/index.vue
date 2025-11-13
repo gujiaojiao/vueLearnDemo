@@ -1,6 +1,5 @@
 <template>
   <div>
-
     <!-- 3D场景容器：必须设置宽高，否则渲染器无法正常显示 -->
     <div class="three-container" ref="container">
       <!-- 进入全屏按钮 -->
@@ -24,11 +23,21 @@ import tianyuandog from '@/assets/images/tianyuandog.png'
 // import environmentHdr from '@/assets/images/environment.hdr'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
-import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
+import { HDRLoader } from 'three/addons/loaders/HDRLoader.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 // 声明核心变量：容器引用、场景/相机/渲染器实例、立方体对象、动画循环ID
 const container = ref(null)
 const environmentHdr = '/public/environment.hdr'
-let scene, camera, renderer, cube, leftCube, rightCube, animationId, controls, gui
+const modelGltf = '/public/garden_gnome_4k.gltf'
+let scene,
+  camera,
+  renderer,
+  cube,
+  leftCube,
+  rightCube,
+  animationId,
+  controls,
+  gui
 
 // 初始化3D场景的核心函数
 const initScene = () => {
@@ -50,6 +59,9 @@ const initScene = () => {
     0.1,
     1000,
   )
+
+  // 添加雾场景
+  // scene.fog = new THREE.FogExp2(0xf0f0f0, 0.1)
 
   // 调整相机位置：默认在(0,0,0)，与立方体重叠会看不到，故沿z轴后移5个单位
   camera.position.z = 10
@@ -75,15 +87,17 @@ const initScene = () => {
   // 加载 HDR 环境贴图并生成 PMREM 环境贴图（推荐流程）
   // --------------------------
   // 使用 PMREM（推荐，更好的反射效果）
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  new HDRLoader().loadAsync('/environment.hdr').then(texture => {
-    const envMap = pmrem.fromEquirectangular(texture).texture;
-    scene.environment = envMap;
-    scene.background = envMap;
-    texture.dispose();
-    pmrem.dispose();
-  }).catch(error => console.error('HDR 加载失败：', error));
-
+  const pmrem = new THREE.PMREMGenerator(renderer)
+  new HDRLoader()
+    .loadAsync('/environment.hdr')
+    .then((texture) => {
+      const envMap = pmrem.fromEquirectangular(texture).texture
+      scene.environment = envMap
+      scene.background = envMap
+      texture.dispose()
+      pmrem.dispose()
+    })
+    .catch((error) => console.error('HDR 加载失败：', error))
 
   // --------------------------
   // 添加 OrbitControls（支持鼠标拖拽旋转、缩放、平移）
@@ -164,57 +178,56 @@ const initScene = () => {
   // rightCube.position.x = 4
   // scene.add(rightCube)
 
-
   //步骤4.1：创建新的网格对象，5个球
   const sphereGeometry = new THREE.SphereGeometry(1, 32, 32) // 创建球体几何体
-  const sphereMaterial1 = new THREE.MeshStandardMaterial({
+  const sphereMaterial1 = new THREE.MeshPhysicalMaterial({
     color: '#f3c5e2',
-    metalness: 0,      // 降低金属度
-    roughness: 0.2,    // 降低粗糙度使表面更光滑
+    metalness: 0, // 降低金属度
+    roughness: 0.2, // 降低粗糙度使表面更光滑
     transparent: true,
-    opacity: 1,      // 增加透明度
-    transmission: 0.5, // 透光度
-    clearcoat: 1,      // 清漆层强度
+    opacity: 1, // 增加透明度
+    transmission: 0.1, // 透光度
+    clearcoat: 0.1, // 清漆层强度
     clearcoatRoughness: 0.1, // 清漆层粗糙度
   })
-  const sphereMaterial2 = new THREE.MeshStandardMaterial({
+  const sphereMaterial2 = new THREE.MeshPhysicalMaterial({
     color: '#309979',
-    etalness: 0,      // 降低金属度
-    roughness: 0.2,    // 降低粗糙度使表面更光滑
+    metalness: 0, // 降低金属度
+    roughness: 1, // 降低粗糙度使表面更光滑
     transparent: true,
-    opacity: 1,      // 增加透明度
-    transmission: 0.5, // 透光度
-    clearcoat: 1,      // 清漆层强度
+    opacity: 1, // 增加透明度
+    transmission: 0.1, // 透光度
+    clearcoat: 0.1, // 清漆层强度
     clearcoatRoughness: 0.1, // 清漆层粗糙度
   })
-  const sphereMaterial3 = new THREE.MeshStandardMaterial({
+  const sphereMaterial3 = new THREE.MeshPhysicalMaterial({
     color: '#659fe5',
-    etalness: 0,      // 降低金属度
-    roughness: 0.2,    // 降低粗糙度使表面更光滑
+    metalness: 0, // 降低金属度
+    roughness: 0.2, // 降低粗糙度使表面更光滑
     transparent: true,
-    opacity: 1,      // 增加透明度
-    transmission: 0.5, // 透光度
-    clearcoat: 1,      // 清漆层强度
+    opacity: 1, // 增加透明度
+    transmission: 0.1, // 透光度
+    clearcoat: 0.1, // 清漆层强度
     clearcoatRoughness: 0.1, // 清漆层粗糙度
   })
-  const sphereMaterial4 = new THREE.MeshStandardMaterial({
+  const sphereMaterial4 = new THREE.MeshPhysicalMaterial({
     color: '#f5866e',
-    etalness: 0,      // 降低金属度
-    roughness: 0.2,    // 降低粗糙度使表面更光滑
+    metalness: 0, // 降低金属度
+    roughness: 0.2, // 降低粗糙度使表面更光滑
     transparent: true,
-    opacity: 1,      // 增加透明度
-    transmission: 0.5, // 透光度
-    clearcoat: 1,      // 清漆层强度
+    opacity: 1, // 增加透明度
+    transmission: 0.1, // 透光度
+    clearcoat: 0.1, // 清漆层强度
     clearcoatRoughness: 0.1, // 清漆层粗糙度
   })
-  const sphereMaterial5 = new THREE.MeshStandardMaterial({
+  const sphereMaterial5 = new THREE.MeshPhysicalMaterial({
     color: '#f9e26b',
-    etalness: 0,      // 降低金属度
-    roughness: 0.2,    // 降低粗糙度使表面更光滑
+    metalness: 0, // 降低金属度
+    roughness: 0.2, // 降低粗糙度使表面更光滑
     transparent: true,
-    opacity: 1,      // 增加透明度
-    transmission: 0.5, // 透光度
-    clearcoat: 1,      // 清漆层强度
+    opacity: 1, // 增加透明度
+    transmission: 0.1, // 透光度
+    clearcoat: 0.1, // 清漆层强度
     clearcoatRoughness: 0.1, // 清漆层粗糙度
   })
   //添加环境光和平行光以增强效果
@@ -230,7 +243,7 @@ const initScene = () => {
   const sphere2 = new THREE.Mesh(sphereGeometry, sphereMaterial2)
   sphere2.position.x = -4
   const sphere3 = new THREE.Mesh(sphereGeometry, sphereMaterial3)
-  sphere3.position.y = 0
+  sphere3.position.x = 0
   const sphere4 = new THREE.Mesh(sphereGeometry, sphereMaterial4)
   sphere4.position.x = 4
   const sphere5 = new THREE.Mesh(sphereGeometry, sphereMaterial5)
@@ -240,6 +253,32 @@ const initScene = () => {
   scene.add(sphere3)
   scene.add(sphere4)
   scene.add(sphere5)
+
+  // 实例化加载器gltf
+  const gltfLoader = new GLTFLoader()
+  // 加载模型
+  const model = gltfLoader.load('/garden_gnome_4k.gltf',
+    (gltf) => {
+      const gnome = gltf.scene
+      // 计算模型边界
+      const box = new THREE.Box3().setFromObject(gnome)
+      const size = box.getSize(new THREE.Vector3())
+      const center = box.getCenter(new THREE.Vector3())
+
+      // 根据尺寸自动调整缩放
+      const maxDim = Math.max(size.x, size.y, size.z)
+      const scale = 3 / maxDim // 让最大尺寸约为3个单位
+      gnome.scale.set(5, 5, 5)
+
+      gnome.position.set(0, 1, 0) // 调整模型位置
+      scene.add(gnome)
+    },
+    undefined,
+    (error) => {
+      console.error('加载 GLTF 模型出错：', error)
+    }
+  )
+
   // --------------------------
   // 步骤5：添加动画循环（实现立方体旋转）
   // --------------------------
@@ -272,41 +311,53 @@ const initScene = () => {
     const guiActions = { enterFullScreen, exitFullScreen }
     gui.add(guiActions, 'enterFullScreen').name('全屏')
     gui.add(guiActions, 'exitFullScreen').name('退出全屏')
-    let cubeFolder = gui.addFolder('中间立方体位置')
-    cubeFolder.add(cube.position, 'x', -10, 10, 1).name('立方体x轴位置')
-    cubeFolder.add(cube.position, 'y', -10, 10, 1).name('立方体y轴位置').onFinishChange(() => {
-      console.log('cube.position.y:', cube.position.y)
-    })
-    cubeFolder.add(cube.position, 'z', -10, 10, 1).name('立方体z轴位置')
-    gui.add(cubeMaterial, 'wireframe').name('是否显示线框')
-
+    // let cubeFolder = gui.addFolder('中间立方体位置')
+    // cubeFolder.add(cube.position, 'x', -10, 10, 1).name('立方体x轴位置')
+    // cubeFolder
+    //   .add(cube.position, 'y', -10, 10, 1)
+    //   .name('立方体y轴位置')
+    //   .onFinishChange(() => {
+    //     console.log('cube.position.y:', cube.position.y)
+    //   })
+    // cubeFolder.add(cube.position, 'z', -10, 10, 1).name('立方体z轴位置')
+    // gui.add(cubeMaterial, 'wireframe').name('是否显示线框')
+    let sphere1Folder = gui.addFolder('球1材质属性')
+    sphere1Folder.add(sphereMaterial1, 'metalness', 0, 1, 0.1).name('球1x金属度')
+    sphere1Folder.add(sphereMaterial1, 'roughness', 0, 1, 0.1).name('球1粗糙度')
+    sphere1Folder.add(sphereMaterial1, 'transmission', 0, 1, 0.1).name('球1透光度')
+    sphere1Folder.add(sphereMaterial1, 'clearcoat', 0, 1, 0.1).name('球1清漆强度')
+    sphere1Folder.add(sphereMaterial1, 'clearcoatRoughness', 0, 1, 0.1).name('球1清漆粗糙度')
+    sphere1Folder.open()
   } catch (error) {
     console.warn('GUI 初始化失败：', error)
   }
 }
 
 const enterFullScreen = () => {
-  const elem = document.documentElement;
+  const elem = document.documentElement
   if (elem.requestFullscreen) {
-    elem.requestFullscreen();
-  } else if (elem.mozRequestFullScreen) { /* Firefox */
-    elem.mozRequestFullScreen();
-  } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
-    elem.webkitRequestFullscreen();
-  } else if (elem.msRequestFullscreen) { /* IE/Edge */
-    elem.msRequestFullscreen();
+    elem.requestFullscreen()
+  } else if (elem.mozRequestFullScreen) {
+    /* Firefox */
+    elem.mozRequestFullScreen()
+  } else if (elem.webkitRequestFullscreen) {
+    /* Chrome, Safari & Opera */
+    elem.webkitRequestFullscreen()
+  } else if (elem.msRequestFullscreen) {
+    /* IE/Edge */
+    elem.msRequestFullscreen()
   }
 }
 
 const exitFullScreen = () => {
   if (document.exitFullscreen) {
-    document.exitFullscreen();
+    document.exitFullscreen()
   } else if (document.mozCancelFullScreen) {
-    document.mozCancelFullScreen();
+    document.mozCancelFullScreen()
   } else if (document.webkitExitFullscreen) {
-    document.webkitExitFullscreen();
+    document.webkitExitFullscreen()
   } else if (document.msExitFullscreen) {
-    document.msExitFullscreen();
+    document.msExitFullscreen()
   }
 }
 // 窗口大小自适应函数（避免窗口缩放后场景变形）
@@ -331,7 +382,6 @@ onMounted(() => {
 
 // Vue生命周期钩子：组件销毁时清理资源（避免内存泄漏）
 onUnmounted(() => {
-
   // 移除窗口缩放监听
   window.removeEventListener('resize', handleWindowResize)
   // 停止动画循环
