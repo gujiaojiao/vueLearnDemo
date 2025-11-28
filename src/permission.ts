@@ -41,8 +41,11 @@ router.beforeEach(async (to: any, from: any, next: any) => {
           //token过期:获取不到用户信息了
           //用户手动修改本地存储token
           //退出登录->用户相关的数据清空
-          await userStore.userloginout()
-          next({ path: '/login' })
+          // await userStore.userloginout()
+          // next({ path: '/login' })
+          console.warn('后端服务不可用，使用默认用户信息')
+          userStore.username = 'default_user'
+          next()
         }
       }
     }

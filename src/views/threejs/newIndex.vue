@@ -254,10 +254,13 @@ const initScene = () => {
   scene.add(sphere4)
   scene.add(sphere5)
 
+
+
   // 实例化加载器gltf
   const gltfLoader = new GLTFLoader()
   // 加载模型
-  const model = gltfLoader.load('/garden_gnome_4k.gltf',
+  const model = gltfLoader.load(
+    '/garden_gnome_4k.gltf',
     (gltf) => {
       const gnome = gltf.scene
       // 计算模型边界
@@ -276,8 +279,11 @@ const initScene = () => {
     undefined,
     (error) => {
       console.error('加载 GLTF 模型出错：', error)
-    }
+    },
   )
+
+
+
 
   // --------------------------
   // 步骤5：添加动画循环（实现立方体旋转）
@@ -322,11 +328,19 @@ const initScene = () => {
     // cubeFolder.add(cube.position, 'z', -10, 10, 1).name('立方体z轴位置')
     // gui.add(cubeMaterial, 'wireframe').name('是否显示线框')
     let sphere1Folder = gui.addFolder('球1材质属性')
-    sphere1Folder.add(sphereMaterial1, 'metalness', 0, 1, 0.1).name('球1x金属度')
+    sphere1Folder
+      .add(sphereMaterial1, 'metalness', 0, 1, 0.1)
+      .name('球1x金属度')
     sphere1Folder.add(sphereMaterial1, 'roughness', 0, 1, 0.1).name('球1粗糙度')
-    sphere1Folder.add(sphereMaterial1, 'transmission', 0, 1, 0.1).name('球1透光度')
-    sphere1Folder.add(sphereMaterial1, 'clearcoat', 0, 1, 0.1).name('球1清漆强度')
-    sphere1Folder.add(sphereMaterial1, 'clearcoatRoughness', 0, 1, 0.1).name('球1清漆粗糙度')
+    sphere1Folder
+      .add(sphereMaterial1, 'transmission', 0, 1, 0.1)
+      .name('球1透光度')
+    sphere1Folder
+      .add(sphereMaterial1, 'clearcoat', 0, 1, 0.1)
+      .name('球1清漆强度')
+    sphere1Folder
+      .add(sphereMaterial1, 'clearcoatRoughness', 0, 1, 0.1)
+      .name('球1清漆粗糙度')
     sphere1Folder.open()
   } catch (error) {
     console.warn('GUI 初始化失败：', error)

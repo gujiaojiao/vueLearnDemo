@@ -82,6 +82,8 @@ const initScene = () => {
   renderer.outputEncoding = THREE.sRGBEncoding
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.0
+  renderer.shadowMap.enabled = true // 开启阴影映射
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap
   container.value.appendChild(renderer.domElement)
   // --------------------------
   // 加载 HDR 环境贴图并生成 PMREM 环境贴图（推荐流程）
@@ -235,7 +237,18 @@ const initScene = () => {
   scene.add(ambientLight)
 
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-  directionalLight.position.set(5, 5, 5)
+  directionalLight.position.set(5, 10, 7)
+  directionalLight.castShadow = true // 启用阴影投射
+  directionalLight.shadow.mapSize.width = 2048
+  directionalLight.shadow.mapSize.height = 2048
+  const d = 12
+  directionalLight.shadow.camera.left = -d
+  directionalLight.shadow.camera.right = d
+  directionalLight.shadow.camera.top = d
+  directionalLight.shadow.camera.bottom = -d
+  directionalLight.shadow.camera.near = 0.5
+  directionalLight.shadow.camera.far = 50
+  directionalLight.shadow.bias = -0.0005
   scene.add(directionalLight)
 
   const sphere1 = new THREE.Mesh(sphereGeometry, sphereMaterial1)
@@ -248,6 +261,11 @@ const initScene = () => {
   sphere4.position.x = 4
   const sphere5 = new THREE.Mesh(sphereGeometry, sphereMaterial5)
   sphere5.position.x = 8
+  sphere1.castShadow = true
+  sphere2.castShadow = true
+  sphere3.castShadow = true
+  sphere4.castShadow = true
+  sphere5.castShadow = true
   scene.add(sphere1)
   scene.add(sphere2)
   scene.add(sphere3)
@@ -257,7 +275,8 @@ const initScene = () => {
   // 实例化加载器gltf
   const gltfLoader = new GLTFLoader()
   // 加载模型
-  const model = gltfLoader.load('/garden_gnome_4k.gltf',
+  const model = gltfLoader.load(
+    '/garden_gnome_4k.gltf',
     (gltf) => {
       const gnome = gltf.scene
       // 计算模型边界
@@ -276,8 +295,21 @@ const initScene = () => {
     undefined,
     (error) => {
       console.error('加载 GLTF 模型出错：', error)
-    }
+    },
   )
+  // 创建底部平面
+  const planeGeometry = new THREE.PlaneGeometry(20, 20)
+  const planeMaterial = new THREE.MeshStandardMaterial({
+    // 设置双面
+    transparent: false,
+    color: 0x808080,
+    side: THREE.DoubleSide,
+  })
+  const plane = new THREE.Mesh(planeGeometry, planeMaterial)
+  plane.rotation.x = -Math.PI / 2 // 旋转90度使其水平放置
+  plane.position.y = -1
+  plane.receiveShadow = true // 启用接收阴影  
+  scene.add(plane)
 
   // --------------------------
   // 步骤5：添加动画循环（实现立方体旋转）
@@ -322,11 +354,19 @@ const initScene = () => {
     // cubeFolder.add(cube.position, 'z', -10, 10, 1).name('立方体z轴位置')
     // gui.add(cubeMaterial, 'wireframe').name('是否显示线框')
     let sphere1Folder = gui.addFolder('球1材质属性')
-    sphere1Folder.add(sphereMaterial1, 'metalness', 0, 1, 0.1).name('球1x金属度')
+    sphere1Folder
+      .add(sphereMaterial1, 'metalness', 0, 1, 0.1)
+      .name('球1x金属度')
     sphere1Folder.add(sphereMaterial1, 'roughness', 0, 1, 0.1).name('球1粗糙度')
-    sphere1Folder.add(sphereMaterial1, 'transmission', 0, 1, 0.1).name('球1透光度')
-    sphere1Folder.add(sphereMaterial1, 'clearcoat', 0, 1, 0.1).name('球1清漆强度')
-    sphere1Folder.add(sphereMaterial1, 'clearcoatRoughness', 0, 1, 0.1).name('球1清漆粗糙度')
+    sphere1Folder
+      .add(sphereMaterial1, 'transmission', 0, 1, 0.1)
+      .name('球1透光度')
+    sphere1Folder
+      .add(sphereMaterial1, 'clearcoat', 0, 1, 0.1)
+      .name('球1清漆强度')
+    sphere1Folder
+      .add(sphereMaterial1, 'clearcoatRoughness', 0, 1, 0.1)
+      .name('球1清漆粗糙度')
     sphere1Folder.open()
   } catch (error) {
     console.warn('GUI 初始化失败：', error)
