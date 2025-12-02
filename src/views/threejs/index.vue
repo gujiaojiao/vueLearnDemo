@@ -308,7 +308,7 @@ const initScene = () => {
   const plane = new THREE.Mesh(planeGeometry, planeMaterial)
   plane.rotation.x = -Math.PI / 2 // 旋转90度使其水平放置
   plane.position.y = -1
-  plane.receiveShadow = true // 启用接收阴影  
+  plane.receiveShadow = true // 启用接收阴影
   scene.add(plane)
 
   // --------------------------

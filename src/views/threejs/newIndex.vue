@@ -254,8 +254,6 @@ const initScene = () => {
   scene.add(sphere4)
   scene.add(sphere5)
 
-
-
   // 实例化加载器gltf
   const gltfLoader = new GLTFLoader()
   // 加载模型
@@ -281,9 +279,6 @@ const initScene = () => {
       console.error('加载 GLTF 模型出错：', error)
     },
   )
-
-
-
 
   // --------------------------
   // 步骤5：添加动画循环（实现立方体旋转）

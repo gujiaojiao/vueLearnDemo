@@ -81,7 +81,7 @@ export const constantRoute = [
   {
     //threejs三维地图
     path: '/threejs',
-    component: () => import('@/views/threejs/index.vue'),
+    component: () => import('@/views/threejs/newWebIndex.vue'),
     name: 'Threejs',
     meta: {
       title: 'threejs三维地图',
