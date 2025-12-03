@@ -5,22 +5,22 @@
     <div class="pages" ref="pages">
       <div class="page">
         <!-- 二级标题 -->
-        <h2 class="title">Three初学</h2>
+        <h2 class="title">Three(1)</h2>
         <p>做官网动画效果</p>
       </div>
       <div class="page">
-        <h2 class="title">Three进阶</h2>
+        <h2 class="title">Three(2)</h2>
         <p>做交互动画效果</p>
       </div>
       <div class="page">
-        <h2 class="title">Three进阶</h2>
-        <p>做交互动画效果</p>
+        <h2 class="title">Three(3)</h2>
+        <p>可视化大屏页面</p>
       </div>
     </div>
   </div>
 </template>
-<script setup>    
-import { ref, onMounted } from 'vue'
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -29,11 +29,19 @@ import backgroundImage from '@/assets/images/stars.png'
 // import { back } from '@/assets/images/back.hdr'
 let screenDom = ref(null)
 let pages = ref(null)
+
+let page = 0
+let timeline2 = gsap.timeline()
 function initScence() {
   // 创建场景
   const scene = new THREE.Scene()
   // 创建相机
-  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000)
+  const camera = new THREE.PerspectiveCamera(
+    45,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100000,
+  )
   camera.position.set(0, 0, 10)
   // scene.add(camera)
 
@@ -65,19 +73,16 @@ function initScence() {
   // )
   // cubeTextureLoader.encoding = THREE.sRGBEncoding
 
-
-
-
   // 添加控制器
-  const controls = new OrbitControls(camera, renderer.domElement)
-  controls.enableDamping = true
-  controls.dampingFactor = 0.25
-  controls.enableZoom = true
-  controls.enablePan = true
+  // const controls = new OrbitControls(camera, renderer.domElement)
+  // controls.enableDamping = true
+  // controls.dampingFactor = 0.25
+  // controls.enableZoom = true
+  // controls.enablePan = true
 
-  controls.minDistance = 5
-  controls.maxDistance = 20
-  controls.update()
+  // controls.minDistance = 5
+  // controls.maxDistance = 20
+  // controls.update()
   // 添加灯光
   const light = new THREE.DirectionalLight(0xffffff, 1)
   light.position.set(0, 0, 1)
@@ -93,9 +98,8 @@ function initScence() {
   const gnomeOne = loaderOne.load(
     '/space/space.gltf',
     (gltf) => {
-      console.log('模型加载没问题', gltf.scene)
       gltf.scene.scale.set(0.1, 0.1, 0.1)
-      gltf.scene.position.set(3.5, 0, 0)
+      gltf.scene.position.set(4, 0, 0)
       const gnome = gltf.scene
       scene.add(gnome)
 
@@ -116,67 +120,183 @@ function initScence() {
       console.error('加载 GLTF 模型出错：', error)
     },
   )
-  // let loaderSecond = new GLTFLoader()
-  // const gnomeSecond = loaderSecond.load(
-  //   '/trans/trans.gltf',
-  //   (gltf) => {
-  //     gltf.scene.scale.set(.8, .8, .8)
-  //     gltf.scene.position.set(3.5, 0, 0)
-  //     const gnome = gltf.scene
-  //     scene.add(gnome)
+  let loaderSecond = new GLTFLoader()
+  const gnomeSecond = loaderSecond.load(
+    '/trans/trans.gltf',
+    (gltf) => {
+      gltf.scene.scale.set(.8, .8, .8)
+      gltf.scene.position.set(3.5, -10, 0)
+      const gnome = gltf.scene
+      scene.add(gnome)
 
-  //     window.addEventListener('mousemove', (event) => {
-  //       let mouseX = (event.clientX / window.innerWidth) * 2 - 1
-  //       let mouseY = (event.clientY / window.innerHeight) * 2 - 1
-  //       let timeline = gsap.timeline()
-  //       timeline.to(gnome.rotation, {
-  //         x: mouseY,
-  //         y: mouseX,
-  //         duration: 0.5,
-  //       })
-  //     })
-  //   },
-  //   undefined,
-  //   (error) => {
-  //     console.error('加载 GLTF 模型出错：', error)
-  //   },
-  // )
-  // let loaderThird = new GLTFLoader()
-  // const gnomeThird = loaderThird.load(
-  //   '/whiteRobot/whiteRobot.gltf',
-  //   (gltf) => {
-  //     gltf.scene.scale.set(1.5, 1.5, 1.5)
-  //     gltf.scene.position.set(3.5, 0, 0)
-  //     const gnome = gltf.scene
-  //     scene.add(gnome)
+      window.addEventListener('mousemove', (event) => {
+        let mouseX = (event.clientX / window.innerWidth) * 2 - 1
+        let mouseY = (event.clientY / window.innerHeight) * 2 - 1
+        let timeline = gsap.timeline()
+        timeline.to(gnome.rotation, {
+          x: mouseY,
+          y: mouseX,
+          duration: 0.5,
+        })
+      })
+    },
+    undefined,
+    (error) => {
+      console.error('加载 GLTF 模型出错：', error)
+    },
+  )
+  let loaderThird = new GLTFLoader()
+  const gnomeThird = loaderThird.load(
+    '/whiteRobot/whiteRobot.gltf',
+    (gltf) => {
+      gltf.scene.scale.set(1.5, 1.5, 1.5)
+      gltf.scene.position.set(3.5, -21, 0)
+      const gnome = gltf.scene
+      scene.add(gnome)
 
-  //     window.addEventListener('mousemove', (event) => {
-  //       let mouseX = (event.clientX / window.innerWidth) * 2 - 1
-  //       let mouseY = (event.clientY / window.innerHeight) * 2 - 1
-  //       let timeline = gsap.timeline()
-  //       timeline.to(gnome.rotation, {
-  //         x: mouseY,
-  //         y: mouseX,
-  //         duration: 0.5,
-  //       })
-  //     })
-  //   },
-  //   undefined,
-  //   (error) => {
-  //     console.error('加载 GLTF 模型出错：', error)
-  //   },
-  // )
+      window.addEventListener('mousemove', (event) => {
+        let mouseX = (event.clientX / window.innerWidth) * 2 - 1
+        let mouseY = (event.clientY / window.innerHeight) * 2 - 1
+        let timeline = gsap.timeline()
+        timeline.to(gnome.rotation, {
+          x: mouseY,
+          y: mouseX,
+          duration: 0.5,
+        })
+      })
+    },
+    undefined,
+    (error) => {
+      console.error('加载 GLTF 模型出错：', error)
+    },
+  )
+
+  // 添加月球模型
+  const loader = new GLTFLoader()
+  loader.load(
+    '/Moon.glb',
+    (gltf) => {
+      const moon = gltf.scene.children[0]
+      console.log('moon', moon)
+      if (moon.material) {
+        // 降低自发光，让光照效果更明显
+        moon.material.emissive = new THREE.Color(0xffffff)
+        moon.material.emissiveIntensity = 1
+
+        // 保持材质的粗糙度和金属度，以获得真实的光影效果
+        if (moon.material.type === 'MeshStandardMaterial') {
+          moon.material.roughness = 0.8
+          moon.material.metalness = 0.2
+        }
+      }
+      for (let j = 0; j < 10; j++) {
+        let moonInstance = new THREE.InstancedMesh(moon.geometry, moon.material, 100)
+        for (let i = 0; i < 100; i++) {
+          let x = Math.random() * 1000 - 500
+          let y = Math.random() * 1000 - 500
+          let z = Math.random() * 1000 - 500
+          let scale = Math.random()
+          let matrix = new THREE.Matrix4()
+          matrix.makeScale(scale, scale, scale)
+          matrix.makeTranslation(x, y, z)
+          moonInstance.setMatrixAt(i, matrix)
+        }
+        // 添加点光源照亮月球
+        const pointLight = new THREE.PointLight(0xffffff, 1, 500) // 颜色，强度，距离
+        pointLight.position.set(0, 0, 5) // 设置光源位置
+        scene.add(pointLight)
+        gsap.to(moonInstance.position, {
+          z: -1000,
+          duration: Math.random() * 10 + 3,
+          ease: 'linear',
+          repeat: -1,
+        })
+        scene.add(moonInstance)
+      }
+    },
+    undefined,
+    (error) => {
+      console.error('加载 GLTF 模型出错：', error)
+    }
+  )
+
+
+
   function render() {
     requestAnimationFrame(render)
-    controls.update()
+    // controls.update()
     renderer.render(scene, camera)
   }
   render()
+
+  return { scene, camera, renderer }
 }
 
 onMounted(() => {
-  initScence()
+  const { scene, camera, renderer } = initScence()
+  const pagesElement = pages.value // 获取DOM元素引用
+
+  // 节流函数
+  function throttle(func, limit) {
+    let inThrottle
+    return function () {
+      const args = arguments
+      const context = this
+      if (!inThrottle) {
+        func.apply(context, args)
+        inThrottle = true
+        setTimeout(() => inThrottle = false, limit)
+      }
+    }
+  }
+
+  const handleScroll = throttle((e) => {
+    e.preventDefault()
+
+    if (e.wheelDelta < 0) {
+      page++
+      if (page > 2) {
+        page = 2
+      }
+    } else if (e.wheelDelta > 0) {
+      page--
+      if (page < 0) {
+        page = 0
+      }
+    }
+
+    if (timeline2.isActive()) {
+      timeline2.kill()
+    }
+
+    timeline2 = gsap.timeline()
+
+    timeline2.to(camera.position, {
+      y: page * -10,
+      duration: 0.8,
+    })
+
+    // 确保pagesElement存在再执行动画
+    if (pagesElement) {
+      timeline2.to(pagesElement, {
+        y: page * -window.innerHeight,
+        duration: 0.8,
+      }, 0)
+    }
+  }, 800)
+
+  window.addEventListener('mousewheel', handleScroll, { passive: false })
+
+
+
+  // 清理函数
+  onBeforeUnmount(() => {
+    window.removeEventListener('mousewheel', handleScroll)
+  })
 })
+// onBeforeUnmount(() => {
+//   window.removeEventListener('mousewheel', handleScroll)
+// })
 </script>
 <style scoped lang="scss">
 .home-container {
@@ -204,10 +324,10 @@ onMounted(() => {
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    transform: translate3d(0, 0, 0);
     .page {
       display: flex;
       flex-direction: column;
-
       width: 100vw;
       height: 100vh;
       color: white;
