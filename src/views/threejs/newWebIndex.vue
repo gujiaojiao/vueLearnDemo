@@ -124,7 +124,7 @@ function initScence() {
   const gnomeSecond = loaderSecond.load(
     '/trans/trans.gltf',
     (gltf) => {
-      gltf.scene.scale.set(.8, .8, .8)
+      gltf.scene.scale.set(0.8, 0.8, 0.8)
       gltf.scene.position.set(3.5, -10, 0)
       const gnome = gltf.scene
       scene.add(gnome)
@@ -177,20 +177,30 @@ function initScence() {
     '/Moon.glb',
     (gltf) => {
       const moon = gltf.scene.children[0]
-      console.log('moon', moon)
       if (moon.material) {
-        // 降低自发光，让光照效果更明显
-        moon.material.emissive = new THREE.Color(0xffffff)
-        moon.material.emissiveIntensity = 1
+        // 克隆材质避免影响原材质
+        moon.material = moon.material.clone()
 
+        // 设置适中的自发光效果
+        moon.material.emissive = new THREE.Color(0xfffffa) // 暖白色发光
+        moon.material.emissiveIntensity = 0.3
         // 保持材质的粗糙度和金属度，以获得真实的光影效果
         if (moon.material.type === 'MeshStandardMaterial') {
-          moon.material.roughness = 0.8
-          moon.material.metalness = 0.2
+          moon.material.roughness = 0.2
+          moon.material.metalness = 0.1
         }
       }
+      const pointLight = new THREE.PointLight(0xff0000, 1, 50) // 颜色，强度，距离
+      pointLight.position.set(0, -5, 5) // 设置光源位置
+      scene.add(pointLight)
+      // const ambientLight = new THREE.AmbientLight(0x404040, 1)
+      // scene.add(ambientLight)
       for (let j = 0; j < 10; j++) {
-        let moonInstance = new THREE.InstancedMesh(moon.geometry, moon.material, 100)
+        let moonInstance = new THREE.InstancedMesh(
+          moon.geometry,
+          moon.material,
+          100,
+        )
         for (let i = 0; i < 100; i++) {
           let x = Math.random() * 1000 - 500
           let y = Math.random() * 1000 - 500
@@ -217,10 +227,8 @@ function initScence() {
     undefined,
     (error) => {
       console.error('加载 GLTF 模型出错：', error)
-    }
+    },
   )
-
-
 
   function render() {
     requestAnimationFrame(render)
@@ -245,7 +253,7 @@ onMounted(() => {
       if (!inThrottle) {
         func.apply(context, args)
         inThrottle = true
-        setTimeout(() => inThrottle = false, limit)
+        setTimeout(() => (inThrottle = false), limit)
       }
     }
   }
@@ -278,16 +286,18 @@ onMounted(() => {
 
     // 确保pagesElement存在再执行动画
     if (pagesElement) {
-      timeline2.to(pagesElement, {
-        y: page * -window.innerHeight,
-        duration: 0.8,
-      }, 0)
+      timeline2.to(
+        pagesElement,
+        {
+          y: page * -window.innerHeight,
+          duration: 0.8,
+        },
+        0,
+      )
     }
   }, 800)
 
   window.addEventListener('mousewheel', handleScroll, { passive: false })
-
-
 
   // 清理函数
   onBeforeUnmount(() => {
