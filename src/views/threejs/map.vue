@@ -3,15 +3,30 @@
     <div class="mapWeb" ref="mapWeb"></div>
   </div>
 </template>
-<script setup>  
-import { ref, reactive, watch, onMounted, onUnmounted, setBlockTracking } from 'vue'
+<script setup>
+import {
+  ref,
+  reactive,
+  watch,
+  onMounted,
+  onUnmounted,
+  setBlockTracking,
+} from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { gsap } from 'gsap/gsap-core'
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min'
+import * as d3 from 'd3';
+import * as topojson from 'topojson-client'; // 顶部导入
+import GeoJsonGeometry from 'three-geojson-geometry';
 import borderBlue from '@/assets/images/borderBlue.png'
 import borderTwo from '@/assets/images/borderTwo.png'
+// 导入新的JSON数据文件
+import areaLevelData from './areaLevel.json'
+import mapData from './mapData.json'
+let provinceLabels = new Map(); // 存储所有省份标签
+let mapGroup = null; // 地图组（供射线检测用
 let scene, camera, render, cube, controls, gui, gridSystem
 let mapWeb = ref(null)
 
@@ -24,7 +39,7 @@ const createVisualizationMap = () => {
       roughness: 0.9,
       metalness: 0.1,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.9,
     })
     const floor = new THREE.Mesh(floorGeometry, floorMaterial)
     floor.rotation.x = -Math.PI / 2
@@ -38,7 +53,7 @@ const createVisualizationMap = () => {
       options.gridSize || 100,
       options.gridDivision || 20,
       options.gridColor || 0x0066cc,
-      options.gridColor || 0x003366
+      options.gridColor || 0x003366,
     )
     gridHelper.position.copy(options.position || new THREE.Vector3(0, -5, 0))
     scene.add(gridHelper)
@@ -57,7 +72,10 @@ const createVisualizationMap = () => {
       }
     }
 
-    pointsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
+    pointsGeometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(points, 3),
+    )
 
     // 为每个点预计算与中心点的距离
     const distances = new Float32Array(points.length / 3)
@@ -83,7 +101,7 @@ const createVisualizationMap = () => {
       vertexColors: true,
       transparent: true,
       opacity: 0.8,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
     })
 
     const pointsSystem = new THREE.Points(pointsGeometry, pointsMaterial)
@@ -140,6 +158,7 @@ const createVisualizationMap = () => {
     return { gridHelper, pointsSystem, updateDiffusion }
   }
 
+
   // 初始化地图元素
   const floor = createFloor()
 
@@ -153,14 +172,14 @@ const createVisualizationMap = () => {
     pointColor: 0x2d4f73,
     pointLayout: {
       row: 80,
-      col: 80
+      col: 80,
     },
     pointBlending: THREE.AdditiveBlending,
-    diffuse: true,              // 是否启用扩散效果
-    diffuseSpeed: 1,            // 扩散速度
-    diffuseColor: 0x00ffff,     // 扩散颜色（波峰颜色）
-    diffuseWidth: 10,            // 扩散波宽度
-    diffuseDir: 1
+    diffuse: true, // 是否启用扩散效果
+    diffuseSpeed: 1, // 扩散速度
+    diffuseColor: 0x00ffff, // 扩散颜色（波峰颜色）
+    diffuseWidth: 10, // 扩散波宽度
+    diffuseDir: 1,
   }
 
   const gridSystem = createGridSystem(gridOptions)
@@ -168,18 +187,457 @@ const createVisualizationMap = () => {
   return { floor, gridSystem }
 }
 
+// 创建省份文字标签（Sprite实现，始终面向相机）
+const createProvinceLabel = (name, position, mapGroup) => {
+  // 1. 创建文字画布纹理
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 256;
+  canvas.height = 64;
 
+  // 基础样式（默认态）
+  const drawText = (isHover) => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 背景（半透明圆角）
+    ctx.fillStyle = 'rgba(13, 22, 129, 0.3)';
+    ctx.roundRect(5, 5, canvas.width - 10, canvas.height - 10, 5);
+    ctx.fill();
+
+    // 文字
+    ctx.font = `bold ${isHover ? 30 : 28}px Microsoft Yahei`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+  };
+
+  // 初始绘制
+  drawText(false);
+
+  // 2. 创建纹理和精灵材质
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false, // 避免文字被地图遮挡
+  });
+
+  // 3. 创建精灵（始终面向相机）
+  const sprite = new THREE.Sprite(material);
+  sprite.name = `label_${name}`;
+  // 位置：省份中心上方（悬浮高度）
+  sprite.position.set(position.x, position.y + 2.2, position.z);
+  // 缩放（适配画布尺寸）
+  sprite.scale.set(2.5, 0.6, 1);
+  mapGroup.add(sprite);
+
+  // 4. 暴露更新方法（用于悬浮切换样式）
+  return {
+    sprite,
+    updateHover: (isHover) => {
+      drawText(isHover);
+      texture.needsUpdate = true; // 更新纹理
+      // 悬浮时轻微放大
+      gsap.to(sprite.scale, {
+        x: isHover ? 2.8 : 2.5,
+        y: isHover ? 0.68 : 0.6,
+        duration: 0.2,
+        ease: 'power1.out'
+      });
+      // 悬浮时轻微上移
+      gsap.to(sprite.position, {
+        y: isHover ? position.y + 0.9 : position.y + 0.8,
+        duration: 0.2,
+        ease: 'power1.out'
+      });
+    }
+  };
+};
+// ===== 替换原柱状图代码：创建“发光科技柱” =====
+const createGlowBar = (cityCenter, cityName, barHeight) => {
+  const barRadius = 0.1; // 柱体半径（对应CylinderGeometry的顶部/底部半径）
+  const height = barHeight;
+
+  // 1. 基础柱体（半透明渐变+自发光）
+  const cylinderGeo = new THREE.CylinderGeometry(barRadius, barRadius, height, 15);
+  // 用MeshBasicMaterial+顶点颜色实现渐变（底部暗、顶部亮）
+  const colors = new Float32Array(cylinderGeo.attributes.position.count * 3);
+  for (let i = 0; i < cylinderGeo.attributes.position.count; i++) {
+    // 根据y坐标（柱体高度）设置颜色渐变
+    const y = cylinderGeo.attributes.position.getY(i);
+    const ratio = (y + height / 2) / height; // 0~1（底部到顶部）
+    // 底部：深科技蓝，顶部：浅亮蓝
+    const baseColor = new THREE.Color(0x0a3d62);
+    const topColor = new THREE.Color(0xb2feff);
+    const mixedColor = baseColor.lerp(topColor, ratio);
+    colors[i * 3] = mixedColor.r;
+    colors[i * 3 + 1] = mixedColor.g;
+    colors[i * 3 + 2] = mixedColor.b;
+  }
+  cylinderGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  // 基础材质（半透明+顶点颜色+自发光）
+  const cylinderMat = new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.8,
+    blending: THREE.AdditiveBlending // 叠加发光
+  });
+  const cylinderMesh = new THREE.Mesh(cylinderGeo, cylinderMat);
+  cylinderMesh.position.set(cityCenter.x, cityCenter.y + height / 2, cityCenter.z);
+  mapGroup.add(cylinderMesh);
+
+  // 2. 外层辉光（核心发光效果）
+  const glowGeo = new THREE.CylinderGeometry(barRadius + 0.05, barRadius + 0.05, height + 0.1, 15);
+  const glowMat = new THREE.ShaderMaterial({
+    uniforms: {
+      glowColor: { value: new THREE.Color(0x69e2f2) },
+      opacity: { value: 0.5 },
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 glowColor;
+      uniform float opacity;
+      varying vec3 vNormal;
+      void main() {
+        float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
+        gl_FragColor = vec4(glowColor, opacity * intensity);
+      }
+    `,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false // 不写入深度，避免遮挡基础柱体
+  });
+  const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+  glowMesh.position.set(cityCenter.x, cityCenter.y + height / 2, cityCenter.z);
+  mapGroup.add(glowMesh);
+
+  // 3. 底部发光底座（匹配示例中的“光柱底座”）
+  const baseGeo = new THREE.RingGeometry(barRadius + 0.1, barRadius + 0.15, 30, 1);
+  baseGeo.rotateX(-Math.PI / 2); // 平躺
+  const baseMat = new THREE.MeshBasicMaterial({
+    color: 0x69e2f2,
+    transparent: true,
+    opacity: 1,
+    blending: THREE.AdditiveBlending
+  });
+  const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+  baseMesh.position.set(cityCenter.x, cityCenter.y + 0.05, cityCenter.z); // 柱体底部下方
+  mapGroup.add(baseMesh);
+
+  // 4.顶部市名标签
+
+
+
+  // // 4. 顶部光环（匹配示例中的“数值底座”）
+  // const topRingGeo = new THREE.RingGeometry(barRadius, barRadius + 0.1, 15);
+  // topRingGeo.rotateX(-Math.PI / 2);
+  // const topRingMat = new THREE.MeshBasicMaterial({
+  //   color: 0xb2feff,
+  //   transparent: true,
+  //   opacity: 0.8,
+  //   blending: THREE.AdditiveBlending
+  // });
+  // const topRingMesh = new THREE.Mesh(topRingGeo, topRingMat);
+  // topRingMesh.position.set(cityCenter.x, cityCenter.y + height + 0.05, cityCenter.z); // 柱体顶部上方
+  // mapGroup.add(topRingMesh);
+
+  const textLabel = createProvinceLabel(
+    cityName, // 显示市名，也可替换为数值（比如barHeight.toFixed(0)）
+    { x: cityCenter.x, y: cityCenter.y + height + 0.2, z: cityCenter.z }, // 文字在柱体顶部上方0.2处
+    mapGroup
+  );
+  // 调整文字标签样式，匹配科技感
+  textLabel.sprite.scale.set(0.8, 0.25, 1); // 缩小标签，更精致
+  textLabel.updateHover(true);
+
+  return { cylinderMesh, glowMesh };
+};
+// 计算GeoJSON特征的几何中心（兼容MultiPolygon/Polygon）
+const getFeatureCenter = (feature, projection) => {
+  if (!feature?.geometry) return new THREE.Vector3(0, 0, 0);
+
+  // 提取所有坐标点
+  let allPoints = [];
+  const coordinates = feature.geometry.type === 'MultiPolygon'
+    ? feature.geometry.coordinates.flat(2)
+    : feature.geometry.coordinates.flat(1);
+
+  // 经纬度转投影坐标
+  coordinates.forEach(([lng, lat]) => {
+    const [x, y] = projection([lng, lat]);
+    allPoints.push({ x, y });
+  });
+
+  // 计算中心
+  if (allPoints.length === 0) return new THREE.Vector3(0, 0, 0);
+  const xAvg = allPoints.reduce((sum, p) => sum + p.x, 0) / allPoints.length;
+  const yAvg = allPoints.reduce((sum, p) => sum + p.y, 0) / allPoints.length;
+
+  return new THREE.Vector3(xAvg, 0, yAvg); // y=0（后续叠加高度）
+};
+
+// 创建地图
+const createMap = () => {
+  // 替代原有mapData导入，直接用阿里全国TopoJSON（无需本地文件
+  const drawChinaMapWithJiangsuCenter = async () => {
+    try {
+      // 1. 加载全国GeoJSON（完整中国数据）
+      const res = await fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json');
+      const chinaGeoJson = await res.json();
+      // 江苏市级数据（13市边界）
+      const resJiangsuCity = await fetch('https://geo.datav.aliyun.com/areas_v3/bound/320000_full.json');
+      const jiangsuCityGeoJson = await resJiangsuCity.json();
+      if (!chinaGeoJson?.features || !jiangsuCityGeoJson?.features) return;
+
+      // 2. 清除旧地图+创建地图组
+      const oldGroup = scene.getObjectByName('provinceGroup');
+      if (oldGroup) scene.remove(oldGroup);
+
+      mapGroup = new THREE.Group();
+      mapGroup.name = 'provinceGroup';
+      mapGroup.position.set(0, 0, 0); // 悬浮在地面上方
+      // mapGroup.renderOrder = 1;
+      scene.add(mapGroup);
+
+      // 3. 关键：D3投影配置（完整中国+江苏居中）
+      const jiangsuCenter = [119.84, 32.98]; // 江苏地理中心
+      const projection = d3.geoMercator()
+        .center(jiangsuCenter)    // 以江苏为中心
+        .scale(130)               // 缩放
+        .translate([2, 0]);       // 平移到原点
+
+      // 定义样式常量（科技蓝明亮风）
+      const STYLE = {
+        // 其他省份样式（基础暗蓝）
+        normal: {
+          color: 0x273d60,
+          height: 0.2,
+          borderColor: 0x2d4c78,
+          opacity: 1
+        },
+        // 江苏省突出样式（科技蓝+加高）
+        jiangsu: {
+          color: 0x68b6fe,
+          // highlightColor: 0x47E5FF,// 高光色
+          height: 0.5,
+          borderColor: 0x68b6fe,
+          opacity: 1
+        },
+        jiangsuCity: {
+          borderColor: 0xffffff,
+          linewidth: 1.5,
+          heightOffset: 0.72
+        }
+      };
+
+      // ===== 清空外层的provinceLabels（避免重复）=====
+      provinceLabels.clear();
+      // 4. 遍历所有省份，逐面渲染（避免变形）
+      let renderCount = 0;
+      chinaGeoJson.features.forEach(feature => {
+        if (!feature?.geometry) return;
+        const name = feature.properties?.name || '未知区域';
+        const isJiangsu = name === '江苏省';
+        // 计算省份中心
+        const center = getFeatureCenter(feature, projection);
+        // 调整中心高度（江苏更高）
+        center.y = isJiangsu ? 0.7 : STYLE.normal.height;
+        // 创建文字标签
+        const label = createProvinceLabel(name, center, mapGroup);
+        provinceLabels.set(name, label);
+        // 提取GeoJSON中的经纬度坐标（多面/单面对象兼容）
+        const coordinates = feature.geometry.type === 'MultiPolygon'
+          ? feature.geometry.coordinates.flat(1)
+          : feature.geometry.coordinates;
+
+        coordinates.forEach(ring => {
+          // 经纬度转Three.js坐标（用D3投影）
+          const points = ring.map(([lng, lat]) => {
+            const [x, y] = projection([lng, lat]);
+            return new THREE.Vector2(x, y); // 转2D Vector
+          });
+
+          if (points.length < 3) return;
+
+          // 创建Shape几何体（原生Three.js，避免变形）
+          const shape = new THREE.Shape(points);
+          // 核心：江苏用ExtrudeGeometry（带厚度），其他用ShapeGeometry
+          let geom;
+          if (isJiangsu) {
+            // 江苏：拉伸几何体（带厚度，实现加高效果）
+            geom = new THREE.ExtrudeGeometry(shape, {
+              depth: STYLE.jiangsu.height, // 厚度=加高高度
+              bevelEnabled: true,          // 倒角（更圆润的边缘，科技感）
+              bevelThickness: 0.1,         // 倒角厚度
+              bevelSize: 0.05              // 倒角尺寸
+            });
+          } else {
+            // 其他省份：基础平面几何体
+            geom = new THREE.ShapeGeometry(shape);
+          }
+
+          // 旋转适配坐标系（保持平躺）
+          geom.rotateX(Math.PI / 2);
+
+          // 材质配置（科技蓝明亮风）
+          let material;
+          if (isJiangsu) {
+            material = new THREE.MeshLambertMaterial({
+              color: STYLE.jiangsu.color,
+              // specular: STYLE.jiangsu.highlightColor, // 高光色
+              // shininess: 80,                          // 光泽度（明亮）
+              side: THREE.DoubleSide,
+              transparent: false,
+            });
+          } else {
+            // 其他省份：基础暗蓝材质
+            material = new THREE.MeshLambertMaterial({
+              color: STYLE.normal.color,
+              side: THREE.DoubleSide,
+              transparent: false
+            });
+          }
+          // 创建Mesh并设置位置
+          const mesh = new THREE.Mesh(geom, material);
+          // 江苏的高度已由ExtrudeGeometry的depth实现，无需额外y偏移
+          // 其他省份保留基础y偏移
+          mesh.position.y = isJiangsu ? 0.7 : STYLE.normal.height;
+          mesh.userData = { province: name };
+          mapGroup.add(mesh);
+          renderCount++;
+          if (!isJiangsu) {
+            const borderGeom = new THREE.EdgesGeometry(geom);
+            const borderMaterial = new THREE.LineBasicMaterial({
+              color: isJiangsu ? STYLE.jiangsu.borderColor : STYLE.normal.borderColor,
+              linewidth: 1,
+              transparent: false
+            });
+            const borderLine = new THREE.LineSegments(borderGeom, borderMaterial);
+            borderLine.position.y = isJiangsu ? 0.7 : STYLE.normal.height + 0.01;
+            mapGroup.add(borderLine);
+          }
+        });
+      });
+
+      // 6.渲染江苏13市边界（加辅助点调试）
+      jiangsuCityGeoJson.features.forEach(cityFeature => {
+        if (!cityFeature?.geometry) return;
+        const cityName = cityFeature.properties?.name || "未知城市";
+        const barHeight = Math.random() * 3 + 1; //不同城市设置随机高度
+        // 修复1：统一坐标结构（不管MultiPolygon/Polygon）
+        const polygonList = cityFeature.geometry.type === 'MultiPolygon'
+          ? cityFeature.geometry.coordinates
+          : [cityFeature.geometry.coordinates];
+
+        polygonList.forEach(polygon => {
+          const ring = polygon[0];
+          if (!Array.isArray(ring) || ring.length < 4) return;
+
+          // 计算市级中心（用于放置柱状图）
+          const cityCenter = getFeatureCenter(cityFeature, projection);
+          cityCenter.y = 0.8; // 柱状图底部高度（和市级边界平齐）
+
+          // 修复3：解析坐标时加类型校验，避免解构单个数值
+          const linePoints = ring.map(point => {
+            // 核心：判断是否是[lng, lat]数组（长度为2的数组）
+            if (!Array.isArray(point) || point.length !== 2) {
+              console.warn('无效坐标点：', point); // 打印无效点，方便排查
+              return null;
+            }
+            const [lng, lat] = point; // 现在解构的是数组，不会报错！
+            const [x, y] = projection([lng, lat]);
+            return new THREE.Vector3(x, 0.8, y);
+          }).filter(p => p !== null); // 过滤无效点
+
+          // 修复4：确保有有效点再渲染
+          if (linePoints.length < 4) return;
+          createGlowBar(cityCenter, cityName, barHeight)
+          // // ===== 创建3D柱状图核心逻辑（无数据依赖版）=====
+          // // 1. 柱状图主体
+          // const barGeometry = new THREE.CylinderGeometry(0.1, 0.1, barHeight, 15);
+          // const barMaterial = new THREE.MeshLambertMaterial({
+          //   color: 0xb2feff,
+          //   emissive: 0x69e2f2,
+          //   emissiveIntensity: 0.8
+          // });
+          // const barMesh = new THREE.Mesh(barGeometry, barMaterial);
+          // barMesh.position.set(cityCenter.x, cityCenter.y + barHeight / 2, cityCenter.z);
+          // mapGroup.add(barMesh);
+
+          // // 2. 顶部发光点（粒子特效）
+          // const pointGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+          // const pointMaterial = new THREE.MeshBasicMaterial({
+          //   color: 0xffffff,
+          //   transparent: true,
+          //   opacity: 0.8,
+          //   blending: THREE.AdditiveBlending
+          // });
+          // const pointMesh = new THREE.Mesh(pointGeometry, pointMaterial);
+          // pointMesh.position.set(cityCenter.x, cityCenter.y + barHeight + 0.1, cityCenter.z);
+          // mapGroup.add(pointMesh);
+          // // 呼吸动画
+          // gsap.to(pointMesh.scale, {
+          //   x: 1.5, y: 1.5, z: 1.5,
+          //   duration: 1.5,
+          //   repeat: -1,
+          //   yoyo: true,
+          //   ease: 'power1.inOut'
+          // });
+
+          // // 3. 顶部显示市名（替代数值，也可后续改数值）
+          // const cityLabel = createProvinceLabel(
+          //   cityName, // 显示市名，而非数值
+          //   { x: cityCenter.x, y: cityCenter.y + barHeight + 0.3, z: cityCenter.z },
+          //   mapGroup
+          // );
+          // cityLabel.sprite.scale.set(1, 0.5, 1);
+          // cityLabel.updateHover(true);
+          // // ==============================================
+
+          const lineGeom = new THREE.BufferGeometry().setFromPoints(linePoints);
+          const line = new THREE.LineSegments(
+            lineGeom,
+            new THREE.LineBasicMaterial({
+              color: 0xffffff,
+              linewidth: 2,
+              depthTest: false
+            })
+          );
+          line.renderOrder = 999;
+          mapGroup.add(line);
+        });
+      });
+    } catch (error) {
+      console.error('渲染错误:', error);
+    }
+  };
+
+  // 调用渲染
+  const loadChinaMap = drawChinaMapWithJiangsuCenter()
+  return { loadChinaMap }
+}
 const initScence = () => {
   // 1.创建场景
   scene = new THREE.Scene()
   scene.background = new THREE.Color(0x192b41)
   // 2.创建相机
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000)
+  camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000,
+  )
   camera.position.set(0, 15, 10)
   camera.lookAt(0, 0, 0)
   scene.add(camera)
   // 3.创建渲染器
-  render = new THREE.WebGLRenderer({ antialias: true, })
+  render = new THREE.WebGLRenderer({ antialias: true })
   render.setSize(window.innerWidth, window.innerHeight)
   mapWeb.value.appendChild(render.domElement)
   //添加灯光 AmbientLight, DirectionalLight
@@ -188,10 +646,6 @@ const initScence = () => {
   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
   directionalLight.position.set(0, 0, 1)
   scene.add(directionalLight)
-  //   const geometry = new THREE.BoxGeometry(1, 1, 1)
-  //   const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 })
-  //   const mesh = new THREE.Mesh(geometry, material)
-  //   scene.add(mesh)
 
   // 4.添加控制器
   controls = new OrbitControls(camera, render.domElement)
@@ -205,34 +659,8 @@ const initScence = () => {
   //   中心位置添加图片贴图
   // 5.中心位置加载图片贴图 - 修复后的代码
   const textureLoader = new THREE.TextureLoader()
-  textureLoader.load(borderBlue,
-    // 成功回调
-    (texture) => {
-      // 设置纹理重复和包装模式（如果需要）
-      texture.wrapS = THREE.RepeatWrapping
-      texture.wrapT = THREE.RepeatWrapping
-
-      const planeGeometry = new THREE.PlaneGeometry(15, 15) // 调整大小更合适
-      const planeMaterial = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true, // 确保透明度
-        side: THREE.DoubleSide, // 双面可见
-        blending: THREE.AdditiveBlending
-      })
-      const plane = new THREE.Mesh(planeGeometry, planeMaterial)
-      plane.position.set(0, 0.2, 0) // 稍微高于地面
-      plane.rotation.x = -Math.PI / 2 // 旋转使其平躺在地面上
-      scene.add(plane)
-      gsap.to(plane.rotation, {
-        z: Math.PI * 2,
-        duration: 15,
-        repeat: -1,
-        ease: 'linear'
-      })
-    },
-  )
-  const textureLoaderTwo = new THREE.TextureLoader()
-  textureLoaderTwo.load(borderTwo,
+  textureLoader.load(
+    borderBlue,
     // 成功回调
     (texture) => {
       // 设置纹理重复和包装模式（如果需要）
@@ -244,10 +672,38 @@ const initScence = () => {
         map: texture,
         transparent: true, // 确保透明度
         side: THREE.DoubleSide, // 双面可见
-        blending: THREE.AdditiveBlending
+        blending: THREE.AdditiveBlending,
       })
       const plane = new THREE.Mesh(planeGeometry, planeMaterial)
-      plane.position.set(0, 0.2, 0) // 稍微高于地面
+      plane.position.set(1, 0.2, -2) // 稍微高于地面
+      plane.rotation.x = -Math.PI / 2 // 旋转使其平躺在地面上
+      scene.add(plane)
+      gsap.to(plane.rotation, {
+        z: Math.PI * 2,
+        duration: 15,
+        repeat: -1,
+        ease: 'linear',
+      })
+    },
+  )
+  const textureLoaderTwo = new THREE.TextureLoader()
+  textureLoaderTwo.load(
+    borderTwo,
+    // 成功回调
+    (texture) => {
+      // 设置纹理重复和包装模式（如果需要）
+      texture.wrapS = THREE.RepeatWrapping
+      texture.wrapT = THREE.RepeatWrapping
+
+      const planeGeometry = new THREE.PlaneGeometry(20, 20) // 调整大小更合适
+      const planeMaterial = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true, // 确保透明度
+        side: THREE.DoubleSide, // 双面可见
+        blending: THREE.AdditiveBlending,
+      })
+      const plane = new THREE.Mesh(planeGeometry, planeMaterial)
+      plane.position.set(1, 0.2, -2) // 稍微高于地面
       plane.rotation.x = -Math.PI / 2 // 旋转使其平躺在地面上
       scene.add(plane)
       // 反方向旋转
@@ -255,7 +711,7 @@ const initScence = () => {
         z: -Math.PI * 2,
         duration: 15,
         repeat: -1,
-        ease: 'linear'
+        ease: 'linear',
       })
     },
   )
@@ -266,101 +722,123 @@ const initScence = () => {
     const lightFolder = gui.addFolder('AmbientLight环境光')
     const lightParams = {
       color: 0xffffff,
-      intensity: 1
+      intensity: 1,
     }
-    lightFolder.add(lightParams, 'color', 0x000000, 0xffffff).onChange((value) => {
-      light.color.set(value)
-    }).name('环境光颜色')
+    lightFolder
+      .add(lightParams, 'color', 0x000000, 0xffffff)
+      .onChange((value) => {
+        light.color.set(value)
+      })
+      .name('环境光颜色')
     lightFolder.add(lightParams, 'intensity', 0, 1, 0.1).name('环境光强度')
-
-
   } catch (e) { }
 
-  const loadChinaMapData = async () => {
-    try {
-      // 从阿里云获取中国城市边界数据
-      const response = await fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
-      const geojsonData = await response.json()
-      geojsonData.features.forEach(feature => {
-        drawProvince(feature)
-      })
-    } catch (error) {
-      console.error('加载地图数据错误:', error)
-    }
-  }
-  const drawProvince = (feature) => {
-    const coordinates = feature.geometry.coordinates
-    const provinceGroup = new THREE.Group()
-    provinceGroup.renderOrder = 10; // 设置渲染顺序，确保在其他对象之上渲染
+  // const loadChinaMapData = async () => {
+  //   try {
+  //     // 从阿里云获取中国城市边界数据
+  //     const response = await fetch(
+  //       'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json',
+  //     )
+  //     const geojsonData = await response.json()
+  //     geojsonData.features.forEach((feature) => {
+  //       drawProvince(feature)
+  //     })
+  //   } catch (error) {
+  //     console.error('加载地图数据错误:', error)
+  //   }
+  // }
+  // const drawProvince = (feature) => {
+  //   const coordinates = feature.geometry.coordinates;
+  //   const provinceGroup = new THREE.Group();
+  //   // scene.add(provinceGroup); // 先添加到场景，确保基础显示
 
-    coordinates.forEach(polygon => {
-      // 处理多边形和多多边形几何体
-      const polygons = Array.isArray(polygon[0][0]) ? polygon : [polygon]
+  //   coordinates.forEach((polygon) => {
+  //     const rings = Array.isArray(polygon[0][0]) ? polygon : [polygon];
+  //     rings.forEach((ring) => {
+  //       // 1. 收集原始经纬度转换的坐标（x对应经度，z对应纬度，y为0）
+  //       const flatPoints = [];
+  //       ring.forEach((coord) => {
+  //         const x = (coord[0] - 119) * 2.5;
+  //         const z = (coord[1] - 33) * 2.5;
+  //         flatPoints.push(new THREE.Vector3(x, 0, z)); // y=0，保持平面
+  //       });
 
-      polygons.forEach(ring => {
-        const points = []
+  //       // 2. 填充面：旋转后贴合地面，高度0.2
+  //       const shape = new THREE.Shape(flatPoints.map(p => new THREE.Vector2(p.x, p.z)));
+  //       const fillGeometry = new THREE.ShapeGeometry(shape);
+  //       fillGeometry.rotateX(-Math.PI / 2);
+  //       const fillMesh = new THREE.Mesh(fillGeometry, new THREE.MeshBasicMaterial({
+  //         color: 0x273d60,
+  //         side: THREE.DoubleSide
+  //       }));
+  //       fillMesh.position.y = 0.2;
+  //       provinceGroup.add(fillMesh);
 
-        const shapePoints2D = []; // Shape需要的2D坐标数组
-        ring.forEach(coord => {
-          // 将经度/纬度转换为3D坐标
-          // 缩放并定位以适应场景，以江苏为中心（约119°E, 33°N）
-          const x = (coord[0] - 119) * 2.5
-          const z = (coord[1] - 33) * 2.5
-          points.push(new THREE.Vector3(x, 0.3, -z))
+  //       // 3. 线框：基于旋转后的平面坐标，仅在y方向抬高0.01（贴近填充面）
+  //       const borderPoints = flatPoints.map(p => {
+  //         // 旋转后，原z轴映射到视觉上的"y方向"，需转换为旋转后的平面坐标
+  //         return new THREE.Vector3(p.x, 0.2 + 0.01, -p.z); // -p.z抵消旋转带来的方向反转
+  //       });
+  //       const borderLine = new THREE.LineLoop(
+  //         new THREE.BufferGeometry().setFromPoints(borderPoints),
+  //         new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 })
+  //       );
+  //       provinceGroup.add(borderLine);
+  //     });
+  //   });
+  //   scene.add(provinceGroup);
+  // }
 
-          shapePoints2D.push(new THREE.Vector2(x, z))
-        })
+  // loadChinaMapData()
 
-
-        // 步骤2：闭合2D路径（Shape必需）
-        if (shapePoints2D.length > 0 && !shapePoints2D[0].equals(shapePoints2D[shapePoints2D.length - 1])) {
-          shapePoints2D.push(shapePoints2D[0]);
-        }
-
-
-        // 步骤3：用2D Shape生成几何体，再适配3D空间
-        const shape = new THREE.Shape(shapePoints2D);
-        // const geometry = new THREE.ShapeGeometry(shape);
-
-        // // 关键：将几何体的2D平面（x/y）旋转为3D的x/z平面
-        // geometry.rotateX(-Math.PI / 2); // 绕x轴旋转90度，让2D的y轴对应3D的z轴
-
-        // // 步骤4：3D填充材质（保留3D特性）
-        const fillMaterial = new THREE.MeshBasicMaterial({
-          color: 0x273d60,
-          transparent: false,
-          opacity: 1,
-          side: THREE.DoubleSide,
-          depthTest: false // 避免3D层级遮挡
-        });
-        const extrudeSettings = {
-          depth: 0.4, // 3D厚度（y轴方向）
-          bevelEnabled: false
-        };
-        const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-        geometry.rotateX(-Math.PI / 2); // 旋转到3D地面平面
-        const fillMesh = new THREE.Mesh(geometry, fillMaterial);
-        fillMesh.position.y = 0.2; // 3D高度（和points3D的y一致）
-        provinceGroup.add(fillMesh);
-
-
-        // 绘制边界线
-        const borderGeometry = new THREE.BufferGeometry().setFromPoints(points)
-        const borderMaterial = new THREE.LineBasicMaterial({
-          color: 0xffffff,
-          linewidth: 1
-        })
-        const borderLine = new THREE.Line(borderGeometry, borderMaterial)
-        provinceGroup.add(borderLine)
-      })
-    })
-
-    scene.add(provinceGroup)
-  }
-
-  loadChinaMapData()
   const { floor, gridSystem: createdGridSystem } = createVisualizationMap()
   gridSystem = createdGridSystem
+  createMap()
+
+  // ===== 新增：鼠标悬浮交互（使用外层的mapGroup和provinceLabels）=====
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  let hoveredProvince = null;
+
+  // 鼠标坐标转换
+  const onMouseMove = (event) => {
+    // 若地图组还没加载，直接返回
+    if (!mapGroup) return;
+
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // 更新射线
+    raycaster.setFromCamera(mouse, camera);
+
+    // 检测地图组内的Mesh（过滤非Mesh对象，比如Line、Sprite）
+    const meshList = mapGroup.children.filter(obj => obj.isMesh);
+    const intersects = raycaster.intersectObjects(meshList);
+
+    // 清除上一个悬浮状态
+    if (hoveredProvince && (!intersects.length || intersects[0].object.userData.province !== hoveredProvince)) {
+      provinceLabels.get(hoveredProvince)?.updateHover(false);
+      hoveredProvince = null;
+    }
+
+    // 设置新悬浮状态
+    if (intersects.length) {
+      const provinceName = intersects[0].object.userData.province;
+      if (provinceName && provinceName !== hoveredProvince) {
+        hoveredProvince = provinceName;
+        provinceLabels.get(provinceName)?.updateHover(true);
+      }
+    }
+  };
+
+  // 绑定事件
+  window.addEventListener('mousemove', onMouseMove);
+
+  // 组件卸载时移除事件
+  onUnmounted(() => {
+    window.removeEventListener('mousemove', onMouseMove);
+  });
+
 
   let lastTime = performance.now()
   function renderScene(currentTime) {
@@ -381,7 +859,7 @@ const initScence = () => {
 onMounted(() => {
   initScence()
 })
- </script>
+</script>
 <style scoped lang="scss">
 .container {
   width: 100%;
