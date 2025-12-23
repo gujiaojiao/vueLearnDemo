@@ -4,13 +4,25 @@
       <div class="addContent">
         <span>增加3D特效</span>
         <el-button @click="addEffect">飞线特效</el-button>
-        <el-button :class="particleEffect ? 'activeButton' : ''" @click="addParticle">粒子特效</el-button>
+        <el-button
+          :class="particleEffect ? 'activeButton' : ''"
+          @click="addParticle"
+        >
+          粒子特效
+        </el-button>
       </div>
     </div>
   </div>
 </template>
 <script setup>
-import { ref, reactive, watch, onMounted, onUnmounted, setBlockTracking } from 'vue'
+import {
+  ref,
+  reactive,
+  watch,
+  onMounted,
+  onUnmounted,
+  setBlockTracking,
+} from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
@@ -35,7 +47,6 @@ let mapWeb = ref(null)
 
 // 粒子特效状态显示
 let particleEffect = ref(false)
-
 
 const createVisualizationMap = () => {
   // 创建地板
@@ -162,8 +173,6 @@ const createVisualizationMap = () => {
       pointsGeometry.attributes.color.needsUpdate = true
     }
 
-
-
     // —— 粒子系统相关 ——
     // let particlePoints = null
     // let particleGeo = null
@@ -271,12 +280,17 @@ const createVisualizationMap = () => {
       particleColor: options.particleColor || 0x69e2f2,
       pointColor: options.pointColor || 0x2d4f73,
       position: options.position || new THREE.Vector3(0, -5, 0),
-      particleSize: 0.25
+      particleSize: 0.25,
     })
 
-    return { gridHelper, pointsSystem, updateDiffusion, ...particleSystem, updateParticles: particleSystem.updateParticles }
+    return {
+      gridHelper,
+      pointsSystem,
+      updateDiffusion,
+      ...particleSystem,
+      updateParticles: particleSystem.updateParticles,
+    }
   }
-
 
   const gridOptions = {
     position: new THREE.Vector3(0, 0, 0),
@@ -341,8 +355,14 @@ const createParticleSystem = (scene, options = {}) => {
       particleColors[ix + 2] = baseColor.b
     }
 
-    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3))
-    particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3))
+    particleGeo.setAttribute(
+      'position',
+      new THREE.BufferAttribute(particlePositions, 3),
+    )
+    particleGeo.setAttribute(
+      'color',
+      new THREE.BufferAttribute(particleColors, 3),
+    )
 
     const canvas = document.createElement('canvas')
     canvas.width = 128
@@ -361,11 +381,13 @@ const createParticleSystem = (scene, options = {}) => {
       opacity: 0.8,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      map: texture
+      map: texture,
     })
 
     particlePoints = new THREE.Points(particleGeo, particleMat)
-    particlePoints.position.copy(options.position || new THREE.Vector3(0, -5, 0))
+    particlePoints.position.copy(
+      options.position || new THREE.Vector3(0, -5, 0),
+    )
     scene.add(particlePoints)
   }
 
@@ -382,7 +404,11 @@ const createParticleSystem = (scene, options = {}) => {
       positions[ix] += (Math.random() - 0.5) * 0.01
       positions[ix + 2] += (Math.random() - 0.5) * 0.01
 
-      const t = Math.min(1, (positions[ix + 1] - particleArea.yMin) / (particleArea.yMax - particleArea.yMin))
+      const t = Math.min(
+        1,
+        (positions[ix + 1] - particleArea.yMin) /
+          (particleArea.yMax - particleArea.yMin),
+      )
       const mixed = baseColor.clone().lerp(fadeColor, t)
       colors[ix] = mixed.r
       colors[ix + 1] = mixed.g
@@ -417,7 +443,7 @@ const createParticleSystem = (scene, options = {}) => {
     addParticle,
     removeParticle,
     updateParticles,
-    particleSystem: particlePoints
+    particleSystem: particlePoints,
   }
 }
 
@@ -1013,7 +1039,7 @@ const initScence = () => {
         transparent: true, // 确保透明度
         side: THREE.DoubleSide, // 双面可见
         blending: THREE.NormalBlending,
-        depthWrite: false
+        depthWrite: false,
       })
       const plane = new THREE.Mesh(planeGeometry, planeMaterial)
       plane.position.set(1, 0.5, -2) // 稍微高于地面
@@ -1042,7 +1068,7 @@ const initScence = () => {
         transparent: true, // 确保透明度
         side: THREE.DoubleSide, // 双面可见
         blending: THREE.NormalBlending,
-        depthWrite: false
+        depthWrite: false,
       })
       const plane = new THREE.Mesh(planeGeometry, planeMaterial)
       plane.position.set(1, 0.5, -2) // 稍微高于地面
@@ -1091,7 +1117,7 @@ const initScence = () => {
       .name('直射光颜色')
     dirLightFolder.add(lightParams2, 'intensity', 0, 1, 0.1).name('直射光强度')
     dirLightFolder.add(lightParams2, 'x', -10, 10, 1).name('直射光x轴位置')
-  } catch (e) { }
+  } catch (e) {}
 
   // const loadChinaMapData = async () => {
   //   try {
