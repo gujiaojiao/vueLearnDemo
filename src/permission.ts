@@ -51,10 +51,23 @@ router.beforeEach(async (to: any, from: any, next: any) => {
     }
   } else {
     // 用户未登录判断
-    if (to.path == '/login') {
+    // if (to.path == '/login') {
+    //   // next()
+    //   userStore.username = 'default_user'
+    //   next({ path: '/threejs' })
+    // } else {
+    //   // next({ path: '/login' })
+    //   userStore.username = 'default_user'
+    //   next({ path: '/threejs' })
+    // }
+    if (to.path === '/threejs') {
+      // 如果已经是threejs页面，直接放行
+      userStore.username = 'default_user'
       next()
     } else {
-      next({ path: '/login' })
+      // 其他情况重定向到threejs
+      userStore.username = 'default_user'
+      next({ path: '/threejs' })
     }
   }
 })

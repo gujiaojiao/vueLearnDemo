@@ -1,17 +1,16 @@
 <template>
   <div class="container" ref="container">
-    <div class="mapWeb" ref="mapWeb"></div>
+    <div class="mapWeb" ref="mapWeb">
+      <div class="addContent">
+        <span>增加3D特效</span>
+        <el-button @click="addEffect">飞线特效</el-button>
+        <el-button :class="particleEffect ? 'activeButton' : ''" @click="addParticle">粒子特效</el-button>
+      </div>
+    </div>
   </div>
 </template>
 <script setup>
-import {
-  ref,
-  reactive,
-  watch,
-  onMounted,
-  onUnmounted,
-  setBlockTracking,
-} from 'vue'
+import { ref, reactive, watch, onMounted, onUnmounted, setBlockTracking } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
@@ -28,7 +27,15 @@ import mapData from './mapData.json'
 let provinceLabels = new Map() // 存储所有省份标签
 let mapGroup = null // 地图组（供射线检测用
 let scene, camera, render, cube, controls, gui, gridSystem
+// 视角状态：初始为远景（正俯视江苏居中），切换后为近景
+let isFarView = true
+const farViewPos = new THREE.Vector3(0, 160, 0.1)
+const nearViewPos = new THREE.Vector3(4, 10, 11)
 let mapWeb = ref(null)
+
+// 粒子特效状态显示
+let particleEffect = ref(false)
+
 
 const createVisualizationMap = () => {
   // 创建地板
@@ -155,15 +162,125 @@ const createVisualizationMap = () => {
       pointsGeometry.attributes.color.needsUpdate = true
     }
 
-    return { gridHelper, pointsSystem, updateDiffusion }
+
+
+    // —— 粒子系统相关 ——
+    // let particlePoints = null
+    // let particleGeo = null
+    // let particleMat = null
+    // let particlePositions = null
+    // let particleVelocities = null
+    // let particleColors = null
+    // let particleCount = 30
+    // const particleArea = {
+    //   x: (layout.row / 2) * shapeSize,
+    //   z: (layout.col / 2) * shapeSize,
+    //   yMin: 0.1,
+    //   yMax: 4,
+    // }
+
+    // const spawnParticles = (count = particleCount) => {
+    //   if (particlePoints) return
+    //   particleCount = count
+    //   particleGeo = new THREE.BufferGeometry()
+    //   particlePositions = new Float32Array(particleCount * 3)
+    //   particleVelocities = new Float32Array(particleCount)
+    //   particleColors = new Float32Array(particleCount * 3)
+    //   const baseColor = new THREE.Color(0x69e2f2)
+    //   for (let i = 0; i < particleCount; i++) {
+    //     const ix = i * 3
+    //     particlePositions[ix] = (Math.random() - 0.5) * particleArea.x * 2
+    //     particlePositions[ix + 1] = particleArea.yMin + Math.random() * 0.5
+    //     particlePositions[ix + 2] = (Math.random() - 0.5) * particleArea.z * 2
+    //     particleVelocities[i] = 0.5 + Math.random() * 1.5
+    //     particleColors[ix] = baseColor.r
+    //     particleColors[ix + 1] = baseColor.g
+    //     particleColors[ix + 2] = baseColor.b
+    //   }
+    //   particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3))
+    //   particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3))
+    //   const canvas = document.createElement('canvas')
+    //   canvas.width = 128
+    //   canvas.height = 128
+    //   const ctx = canvas.getContext('2d')
+    //   ctx.beginPath()
+    //   ctx.arc(64, 64, 60, 0, Math.PI * 2)
+    //   ctx.fillStyle = 'rgba(220, 255, 255, 1.0)'
+    //   ctx.fill()
+    //   const texture = new THREE.CanvasTexture(canvas)
+    //   particleMat = new THREE.PointsMaterial({
+    //     size: 0.25,
+    //     vertexColors: true,
+    //     transparent: true,
+    //     opacity: 0.8,
+    //     blending: THREE.AdditiveBlending,
+    //     depthWrite: false,
+    //     map: texture
+    //   })
+    //   particlePoints = new THREE.Points(particleGeo, particleMat)
+    //   particlePoints.position.copy(options.position || new THREE.Vector3(0, -5, 0))
+    //   scene.add(particlePoints)
+    // }
+
+    // const updateParticles = (deltaTime) => {
+    //   if (!particlePoints) return
+    //   const positions = particleGeo.attributes.position.array
+    //   const colors = particleGeo.attributes.color.array
+    //   const baseColor = new THREE.Color(options.particleColor || 0x69e2f2)
+    //   const fadeColor = new THREE.Color(options.pointColor || 0x2d4f73)
+    //   for (let i = 0; i < particleCount; i++) {
+    //     const ix = i * 3
+    //     positions[ix + 1] += particleVelocities[i] * deltaTime
+    //     positions[ix] += (Math.random() - 0.5) * 0.01
+    //     positions[ix + 2] += (Math.random() - 0.5) * 0.01
+    //     const t = Math.min(1, (positions[ix + 1] - particleArea.yMin) / (particleArea.yMax - particleArea.yMin))
+    //     const mixed = baseColor.clone().lerp(fadeColor, t)
+    //     colors[ix] = mixed.r
+    //     colors[ix + 1] = mixed.g
+    //     colors[ix + 2] = mixed.b
+    //     if (positions[ix + 1] > particleArea.yMax) {
+    //       positions[ix] = (Math.random() - 0.5) * particleArea.x * 2
+    //       positions[ix + 1] = particleArea.yMin
+    //       positions[ix + 2] = (Math.random() - 0.5) * particleArea.z * 2
+    //       particleVelocities[i] = 0.5 + Math.random() * 1.5
+    //     }
+    //   }
+    //   particleGeo.attributes.position.needsUpdate = true
+    //   particleGeo.attributes.color.needsUpdate = true
+    // }
+
+    // const addParticle = (count) => {
+    //   spawnParticles(count)
+    // }
+
+    // const removeParticle = () => {
+    //   if (!particlePoints) return
+    //   scene.remove(particlePoints)
+    //   particleGeo.dispose()
+    //   particleMat.dispose()
+    //   particleGeo = particleMat = particlePoints = null
+    //   particlePositions = particleVelocities = particleColors = null
+    // }
+
+    const particleSystem = createParticleSystem(scene, {
+      particleCount: 30,
+      layout: options.pointLayout,
+      shapeSize: options.shapeSize,
+      yMin: 0.1,
+      yMax: 4,
+      particleColor: options.particleColor || 0x69e2f2,
+      pointColor: options.pointColor || 0x2d4f73,
+      position: options.position || new THREE.Vector3(0, -5, 0),
+      particleSize: 0.25
+    })
+
+    return { gridHelper, pointsSystem, updateDiffusion, ...particleSystem, updateParticles: particleSystem.updateParticles }
   }
 
-  // 初始化地图元素
-  const floor = createFloor()
 
   const gridOptions = {
     position: new THREE.Vector3(0, 0, 0),
-    gridSize: 75,
+    gridSize: 40,
     gridDivision: 20,
     gridColor: 0x2d4f73,
     shapeSize: 0.5,
@@ -183,7 +300,125 @@ const createVisualizationMap = () => {
 
   const gridSystem = createGridSystem(gridOptions)
 
-  return { floor, gridSystem }
+  return { gridSystem }
+}
+
+//粒子系统
+const createParticleSystem = (scene, options = {}) => {
+  let particlePoints = null
+  let particleGeo = null
+  let particleMat = null
+  let particlePositions = null
+  let particleVelocities = null
+  let particleColors = null
+  let particleCount = options.particleCount || 30
+
+  const particleArea = {
+    x: (options.layout?.row || 80) * (options.shapeSize || 0.5),
+    z: (options.layout?.col || 80) * (options.shapeSize || 0.5),
+    yMin: options.yMin || 0.1,
+    yMax: options.yMax || 4,
+  }
+
+  const spawnParticles = (count = particleCount) => {
+    if (particlePoints) return
+    particleCount = count
+    particleGeo = new THREE.BufferGeometry()
+    particlePositions = new Float32Array(particleCount * 3)
+    particleVelocities = new Float32Array(particleCount)
+    particleColors = new Float32Array(particleCount * 3)
+    const baseColor = new THREE.Color(options.particleColor || 0x69e2f2)
+
+    for (let i = 0; i < particleCount; i++) {
+      const ix = i * 3
+      particlePositions[ix] = (Math.random() - 0.5) * particleArea.x * 2
+      particlePositions[ix + 1] = particleArea.yMin + Math.random() * 0.5
+      particlePositions[ix + 2] = (Math.random() - 0.5) * particleArea.z * 2
+      particleVelocities[i] = 0.5 + Math.random() * 1.5
+
+      particleColors[ix] = baseColor.r
+      particleColors[ix + 1] = baseColor.g
+      particleColors[ix + 2] = baseColor.b
+    }
+
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3))
+    particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 128
+    canvas.height = 128
+    const ctx = canvas.getContext('2d')
+    ctx.beginPath()
+    ctx.arc(64, 64, 60, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(220, 255, 255, 1.0)'
+    ctx.fill()
+    const texture = new THREE.CanvasTexture(canvas)
+
+    particleMat = new THREE.PointsMaterial({
+      size: options.particleSize || 0.25,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      map: texture
+    })
+
+    particlePoints = new THREE.Points(particleGeo, particleMat)
+    particlePoints.position.copy(options.position || new THREE.Vector3(0, -5, 0))
+    scene.add(particlePoints)
+  }
+
+  const updateParticles = (deltaTime) => {
+    if (!particlePoints) return
+    const positions = particleGeo.attributes.position.array
+    const colors = particleGeo.attributes.color.array
+    const baseColor = new THREE.Color(options.particleColor || 0x69e2f2)
+    const fadeColor = new THREE.Color(options.pointColor || 0x2d4f73)
+
+    for (let i = 0; i < particleCount; i++) {
+      const ix = i * 3
+      positions[ix + 1] += particleVelocities[i] * deltaTime
+      positions[ix] += (Math.random() - 0.5) * 0.01
+      positions[ix + 2] += (Math.random() - 0.5) * 0.01
+
+      const t = Math.min(1, (positions[ix + 1] - particleArea.yMin) / (particleArea.yMax - particleArea.yMin))
+      const mixed = baseColor.clone().lerp(fadeColor, t)
+      colors[ix] = mixed.r
+      colors[ix + 1] = mixed.g
+      colors[ix + 2] = mixed.b
+
+      if (positions[ix + 1] > particleArea.yMax) {
+        positions[ix] = (Math.random() - 0.5) * particleArea.x * 2
+        positions[ix + 1] = particleArea.yMin
+        positions[ix + 2] = (Math.random() - 0.5) * particleArea.z * 2
+        particleVelocities[i] = 0.5 + Math.random() * 1.5
+      }
+    }
+
+    particleGeo.attributes.position.needsUpdate = true
+    particleGeo.attributes.color.needsUpdate = true
+  }
+
+  const addParticle = (count) => {
+    spawnParticles(count)
+  }
+
+  const removeParticle = () => {
+    if (!particlePoints) return
+    scene.remove(particlePoints)
+    particleGeo.dispose()
+    particleMat.dispose()
+    particleGeo = particleMat = particlePoints = null
+    particlePositions = particleVelocities = particleColors = null
+  }
+
+  return {
+    addParticle,
+    removeParticle,
+    updateParticles,
+    particleSystem: particlePoints
+  }
 }
 
 // 创建省份文字标签（Sprite实现，始终面向相机）
@@ -276,7 +511,7 @@ const createCityLabel = (name, position, mapGroup) => {
     // 创建文字发光效果
     // ctx.shadowColor = '#69e2f2'  // 发光颜色(蓝绿色)
     // ctx.shadowBlur = 1 // 发光模糊度
-    ctx.fillStyle = '#ffffff'  // 文字颜色(白色)
+    ctx.fillStyle = '#ffffff' // 文字颜色(白色)
 
     // 绘制文字
     ctx.fillText(name, canvas.width / 2, canvas.height / 2)
@@ -289,7 +524,7 @@ const createCityLabel = (name, position, mapGroup) => {
   const material = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
-    depthWrite: false
+    depthWrite: false,
   })
 
   // 创建精灵对象
@@ -304,10 +539,9 @@ const createCityLabel = (name, position, mapGroup) => {
     updateHover: (isHover) => {
       drawText(isHover)
       texture.needsUpdate = true
-    }
+    },
   }
 }
-
 
 // ===== 替换原柱状图代码：创建“发光科技柱” =====
 const createGlowBar = (cityCenter, cityName, barHeight) => {
@@ -480,7 +714,6 @@ const createMap = () => {
       mapGroup = new THREE.Group()
       mapGroup.name = 'provinceGroup'
       mapGroup.position.set(0, 0, 0) // 悬浮在地面上方
-      // mapGroup.renderOrder = 1;
       scene.add(mapGroup)
 
       // 3. 关键：D3投影配置（完整中国+江苏居中）
@@ -505,7 +738,7 @@ const createMap = () => {
           color: 0x68b6fe,
           // highlightColor: 0x47E5FF,// 高光色
           height: 0.5,
-          borderColor: 0x68b6fe,
+          borderColor: 0xffffff,
           opacity: 1,
         },
         jiangsuCity: {
@@ -574,7 +807,7 @@ const createMap = () => {
               // shininess: 80,                          // 光泽度（明亮）
               // side: THREE.DoubleSide,
               opacity: 0.8,
-              transparent: false,
+              transparent: true,
             })
           } else {
             // 其他省份：基础暗蓝材质
@@ -599,13 +832,13 @@ const createMap = () => {
                 ? STYLE.jiangsu.borderColor
                 : STYLE.normal.borderColor,
               linewidth: 1,
-              transparent: false,
+              transparent: true,
             })
             const borderLine = new THREE.LineSegments(
               borderGeom,
               borderMaterial,
             )
-            borderLine.position.y = isJiangsu ? 0.7 : STYLE.normal.height + 0.01
+            borderLine.position.y = isJiangsu ? 0.5 : STYLE.normal.height + 0.01
             mapGroup.add(borderLine)
           }
         })
@@ -634,10 +867,7 @@ const createMap = () => {
           const linePoints = ring
             .map((point) => {
               // 核心：判断是否是[lng, lat]数组（长度为2的数组）
-              if (!Array.isArray(point) || point.length !== 2) {
-                console.warn('无效坐标点：', point) // 打印无效点，方便排查
-                return null
-              }
+              if (!Array.isArray(point) || point.length !== 2) return null
               const [lng, lat] = point // 现在解构的是数组，不会报错！
               const [x, y] = projection([lng, lat])
               return new THREE.Vector3(x, 0.8, y)
@@ -647,55 +877,13 @@ const createMap = () => {
           // 修复4：确保有有效点再渲染
           if (linePoints.length < 4) return
           createGlowBar(cityCenter, cityName, barHeight)
-          // // ===== 创建3D柱状图核心逻辑（无数据依赖版）=====
-          // // 1. 柱状图主体
-          // const barGeometry = new THREE.CylinderGeometry(0.1, 0.1, barHeight, 15);
-          // const barMaterial = new THREE.MeshLambertMaterial({
-          //   color: 0xb2feff,
-          //   emissive: 0x69e2f2,
-          //   emissiveIntensity: 0.8
-          // });
-          // const barMesh = new THREE.Mesh(barGeometry, barMaterial);
-          // barMesh.position.set(cityCenter.x, cityCenter.y + barHeight / 2, cityCenter.z);
-          // mapGroup.add(barMesh);
-
-          // // 2. 顶部发光点（粒子特效）
-          // const pointGeometry = new THREE.SphereGeometry(0.08, 16, 16);
-          // const pointMaterial = new THREE.MeshBasicMaterial({
-          //   color: 0xffffff,
-          //   transparent: true,
-          //   opacity: 0.8,
-          //   blending: THREE.AdditiveBlending
-          // });
-          // const pointMesh = new THREE.Mesh(pointGeometry, pointMaterial);
-          // pointMesh.position.set(cityCenter.x, cityCenter.y + barHeight + 0.1, cityCenter.z);
-          // mapGroup.add(pointMesh);
-          // // 呼吸动画
-          // gsap.to(pointMesh.scale, {
-          //   x: 1.5, y: 1.5, z: 1.5,
-          //   duration: 1.5,
-          //   repeat: -1,
-          //   yoyo: true,
-          //   ease: 'power1.inOut'
-          // });
-
-          // // 3. 顶部显示市名（替代数值，也可后续改数值）
-          // const cityLabel = createProvinceLabel(
-          //   cityName, // 显示市名，而非数值
-          //   { x: cityCenter.x, y: cityCenter.y + barHeight + 0.3, z: cityCenter.z },
-          //   mapGroup
-          // );
-          // cityLabel.sprite.scale.set(1, 0.5, 1);
-          // cityLabel.updateHover(true);
-          // // ==============================================
-
           const lineGeom = new THREE.BufferGeometry().setFromPoints(linePoints)
           const line = new THREE.LineSegments(
             lineGeom,
             new THREE.LineBasicMaterial({
               color: 0xffffff,
               linewidth: 2,
-              depthTest: false,
+              depthTest: true,
             }),
           )
           line.renderOrder = 999
@@ -722,7 +910,8 @@ const initScence = () => {
     0.1,
     1000,
   )
-  camera.position.set(4, 10, 11)
+  // 初始设置为远景：正俯视江苏中心
+  camera.position.copy(farViewPos)
   camera.lookAt(0, 0, 0)
   scene.add(camera)
   // 3.创建渲染器
@@ -742,9 +931,71 @@ const initScence = () => {
   controls.dampingFactor = 0.25
   controls.enableZoom = true
   controls.enablePan = true
-  controls.minDistance = 5
-  controls.maxDistance = 20
+  // 初始时禁止用户交互（保持远景正俯视）
+  controls.enabled = false
+  // 宽松的距离限制，便于远景显示
+  controls.minDistance = 1
+  controls.maxDistance = 1000
+  controls.target.set(0, 0, 0)
   controls.update()
+
+  // 交互：鼠标滚轮或点击时切换到近景（只触发一次）
+  const switchToNearView = () => {
+    if (!isFarView) return
+    isFarView = false
+    controls.enabled = false // 动画期间禁用交互
+    gsap.to(camera.position, {
+      x: nearViewPos.x,
+      y: nearViewPos.y,
+      z: nearViewPos.z,
+      duration: 1.2,
+      ease: 'power2.inOut',
+      onUpdate: () => {
+        camera.lookAt(0, 0, 0)
+        controls.update()
+      },
+      onComplete: () => {
+        // 切换为近景后启用交互，并收紧缩放范围
+        controls.enabled = true
+        controls.minDistance = 2
+        controls.maxDistance = 80
+        controls.update()
+      },
+    })
+  }
+
+  // 双击返回远景（可选）
+  const switchToFarView = () => {
+    if (isFarView) return
+    isFarView = true
+    controls.enabled = false
+    gsap.to(camera.position, {
+      x: farViewPos.x,
+      y: farViewPos.y,
+      z: farViewPos.z,
+      duration: 1.2,
+      ease: 'power2.inOut',
+      onUpdate: () => {
+        camera.lookAt(0, 0, 0)
+        controls.update()
+      },
+      onComplete: () => {
+        controls.enabled = false
+        controls.minDistance = 1
+        controls.maxDistance = 1000
+        controls.update()
+      },
+    })
+  }
+
+  const onUserInteraction = (e) => {
+    if (isFarView) switchToNearView()
+  }
+
+  window.addEventListener('wheel', onUserInteraction, { passive: true })
+  window.addEventListener('click', onUserInteraction)
+  window.addEventListener('dblclick', switchToFarView)
+
   //   中心位置添加图片贴图
   // 5.中心位置加载图片贴图 - 修复后的代码
   const textureLoader = new THREE.TextureLoader()
@@ -761,7 +1012,8 @@ const initScence = () => {
         map: texture,
         transparent: true, // 确保透明度
         side: THREE.DoubleSide, // 双面可见
-        blending: THREE.AdditiveBlending,
+        blending: THREE.NormalBlending,
+        depthWrite: false
       })
       const plane = new THREE.Mesh(planeGeometry, planeMaterial)
       plane.position.set(1, 0.5, -2) // 稍微高于地面
@@ -789,7 +1041,8 @@ const initScence = () => {
         map: texture,
         transparent: true, // 确保透明度
         side: THREE.DoubleSide, // 双面可见
-        blending: THREE.AdditiveBlending,
+        blending: THREE.NormalBlending,
+        depthWrite: false
       })
       const plane = new THREE.Mesh(planeGeometry, planeMaterial)
       plane.position.set(1, 0.5, -2) // 稍微高于地面
@@ -830,14 +1083,14 @@ const initScence = () => {
       y: 0,
       z: 0,
     }
-    dirLightFolder.add(lightParams2, 'color', 0x000000, 0xffffff)
+    dirLightFolder
+      .add(lightParams2, 'color', 0x000000, 0xffffff)
       .onChange((value) => {
         directionalLight.color.set(value)
       })
       .name('直射光颜色')
     dirLightFolder.add(lightParams2, 'intensity', 0, 1, 0.1).name('直射光强度')
     dirLightFolder.add(lightParams2, 'x', -10, 10, 1).name('直射光x轴位置')
-
   } catch (e) { }
 
   // const loadChinaMapData = async () => {
@@ -898,7 +1151,7 @@ const initScence = () => {
 
   // loadChinaMapData()
 
-  const { floor, gridSystem: createdGridSystem } = createVisualizationMap()
+  const { gridSystem: createdGridSystem } = createVisualizationMap()
   gridSystem = createdGridSystem
   createMap()
 
@@ -948,6 +1201,9 @@ const initScence = () => {
   // 组件卸载时移除事件
   onUnmounted(() => {
     window.removeEventListener('mousemove', onMouseMove)
+    window.removeEventListener('wheel', onUserInteraction)
+    window.removeEventListener('click', onUserInteraction)
+    window.removeEventListener('dblclick', switchToFarView)
   })
 
   let lastTime = performance.now()
@@ -956,16 +1212,26 @@ const initScence = () => {
     const deltaTime = (currentTime - lastTime) / 1000
     lastTime = currentTime
 
-    // 更新扩散效果
+    // 更新扩散效果 & 粒子更新
     // if (gridSystem && gridSystem.updateDiffusion) {
     //   gridSystem.updateDiffusion(deltaTime)
     // }
+    if (gridSystem && gridSystem.updateParticles) {
+      gridSystem.updateParticles(deltaTime)
+    }
 
     render.render(scene, camera)
   }
   renderScene()
 }
-
+function addParticle() {
+  particleEffect.value = !particleEffect.value
+  if (particleEffect.value) {
+    gridSystem.addParticle()
+  } else {
+    gridSystem.removeParticle()
+  }
+}
 onMounted(() => {
   initScence()
 })
@@ -980,6 +1246,28 @@ onMounted(() => {
   .mapWeb {
     width: 100%;
     height: 100%;
+    .addContent {
+      position: absolute;
+      top: 50%;
+      right: 3%;
+      transform: translateY(-50%);
+      color: #fff;
+      z-index: 10;
+      width: 120px;
+      text-align: center;
+      .el-button {
+        display: block;
+        margin: 25px 0;
+        width: 100%;
+        background: transparent;
+        border: 1px solid #409eff;
+        color: #409eff;
+      }
+      .activeButton {
+        background: #409eff;
+        color: #fff;
+      }
+    }
   }
 }
 </style>
