@@ -4,10 +4,7 @@
       <div class="addContent">
         <span>增加3D特效</span>
         <el-button @click="addEffect">飞线特效</el-button>
-        <el-button
-          :class="particleEffect ? 'activeButton' : ''"
-          @click="addParticle"
-        >
+        <el-button :class="particleEffect ? 'activeButton' : ''" @click="addParticle">
           粒子特效
         </el-button>
       </div>
@@ -407,7 +404,7 @@ const createParticleSystem = (scene, options = {}) => {
       const t = Math.min(
         1,
         (positions[ix + 1] - particleArea.yMin) /
-          (particleArea.yMax - particleArea.yMin),
+        (particleArea.yMax - particleArea.yMin),
       )
       const mixed = baseColor.clone().lerp(fadeColor, t)
       colors[ix] = mixed.r
@@ -722,14 +719,16 @@ const createMap = () => {
   const drawChinaMapWithJiangsuCenter = async () => {
     try {
       // 1. 加载全国GeoJSON（完整中国数据）
-      const res = await fetch(
-        'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json',
-      )
+      // const res = await fetch(
+      //   'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json',
+      // )
+      const res = await fetch(`${import.meta.env.BASE_URL}data/100000_full.json`)
       const chinaGeoJson = await res.json()
       // 江苏市级数据（13市边界）
-      const resJiangsuCity = await fetch(
-        'https://geo.datav.aliyun.com/areas_v3/bound/320000_full.json',
-      )
+      // const resJiangsuCity = await fetch(
+      //   'https://geo.datav.aliyun.com/areas_v3/bound/320000_full.json',
+      // )
+      const resJiangsuCity = await fetch(`${import.meta.env.BASE_URL}data/320000_full.json`)
       const jiangsuCityGeoJson = await resJiangsuCity.json()
       if (!chinaGeoJson?.features || !jiangsuCityGeoJson?.features) return
 
@@ -1117,7 +1116,7 @@ const initScence = () => {
       .name('直射光颜色')
     dirLightFolder.add(lightParams2, 'intensity', 0, 1, 0.1).name('直射光强度')
     dirLightFolder.add(lightParams2, 'x', -10, 10, 1).name('直射光x轴位置')
-  } catch (e) {}
+  } catch (e) { }
 
   // const loadChinaMapData = async () => {
   //   try {
