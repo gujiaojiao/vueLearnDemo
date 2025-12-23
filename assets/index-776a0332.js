@@ -1,0 +1,1 @@
+import{_ as n,o,e as r,h as t}from"./index-9585324e.js";const s={};function a(c,e){return o(),r("div",null,[...e[0]||(e[0]=[t("h1",null,"我是一级路由404",-1)])])}const _=n(s,[["render",a]]);export{_ as default};
