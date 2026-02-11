@@ -90,6 +90,17 @@ export const constantRoute = [
     },
   },
   {
+    //Fabric  2D
+    path: '/fabric',
+    component: () => import('@/views/fabric/index.vue'),
+    name: 'Fabric',
+    meta: {
+      title: 'Fabric 2D',
+      hidden: false,
+      icon: 'Platform',
+    },
+  },
+  {
     // 权限管理路由
     path: '/acl',
     component: () => import('@/layout/index.vue'),

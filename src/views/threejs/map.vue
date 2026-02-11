@@ -3,7 +3,7 @@
     <div class="mapWeb" ref="mapWeb">
       <div class="addContent">
         <span>增加3D特效</span>
-        <el-button @click="addEffect">飞线特效</el-button>
+        <el-button :class="flyEffectActive ? 'activeButton' : ''" @click="addEffect">飞线特效</el-button>
         <el-button :class="particleEffect ? 'activeButton' : ''" @click="addParticle">
           粒子特效
         </el-button>
@@ -34,16 +34,24 @@ import borderTwo from '@/assets/images/borderTwo.png'
 import areaLevelData from './areaLevel.json'
 import mapData from './mapData.json'
 let provinceLabels = new Map() // 存储所有省份标签
-let mapGroup = null // 地图组（供射线检测用
+let mapGroup = null // 地图组（供射线检测用）
 let scene, camera, render, cube, controls, gui, gridSystem
 // 视角状态：初始为远景（正俯视江苏居中），切换后为近景
 let isFarView = true
 const farViewPos = new THREE.Vector3(0, 160, 0.1)
 const nearViewPos = new THREE.Vector3(4, 10, 11)
 let mapWeb = ref(null)
+let cityMeshes = new Map()
+let highlightedCity = null
 
 // 粒子特效状态显示
 let particleEffect = ref(false)
+
+// 飞线特效数据
+let flyLineGroup = null
+let flyLines = [] // { curve, line, comet, speed, progress }
+let cityCenters = [] // 存储所有市中心位置 { name, position: Vector3 }
+const flyEffectActive = ref(false)
 
 const createVisualizationMap = () => {
   // 创建地板
@@ -169,104 +177,6 @@ const createVisualizationMap = () => {
 
       pointsGeometry.attributes.color.needsUpdate = true
     }
-
-    // —— 粒子系统相关 ——
-    // let particlePoints = null
-    // let particleGeo = null
-    // let particleMat = null
-    // let particlePositions = null
-    // let particleVelocities = null
-    // let particleColors = null
-    // let particleCount = 30
-    // const particleArea = {
-    //   x: (layout.row / 2) * shapeSize,
-    //   z: (layout.col / 2) * shapeSize,
-    //   yMin: 0.1,
-    //   yMax: 4,
-    // }
-
-    // const spawnParticles = (count = particleCount) => {
-    //   if (particlePoints) return
-    //   particleCount = count
-    //   particleGeo = new THREE.BufferGeometry()
-    //   particlePositions = new Float32Array(particleCount * 3)
-    //   particleVelocities = new Float32Array(particleCount)
-    //   particleColors = new Float32Array(particleCount * 3)
-    //   const baseColor = new THREE.Color(0x69e2f2)
-    //   for (let i = 0; i < particleCount; i++) {
-    //     const ix = i * 3
-    //     particlePositions[ix] = (Math.random() - 0.5) * particleArea.x * 2
-    //     particlePositions[ix + 1] = particleArea.yMin + Math.random() * 0.5
-    //     particlePositions[ix + 2] = (Math.random() - 0.5) * particleArea.z * 2
-    //     particleVelocities[i] = 0.5 + Math.random() * 1.5
-    //     particleColors[ix] = baseColor.r
-    //     particleColors[ix + 1] = baseColor.g
-    //     particleColors[ix + 2] = baseColor.b
-    //   }
-    //   particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3))
-    //   particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3))
-    //   const canvas = document.createElement('canvas')
-    //   canvas.width = 128
-    //   canvas.height = 128
-    //   const ctx = canvas.getContext('2d')
-    //   ctx.beginPath()
-    //   ctx.arc(64, 64, 60, 0, Math.PI * 2)
-    //   ctx.fillStyle = 'rgba(220, 255, 255, 1.0)'
-    //   ctx.fill()
-    //   const texture = new THREE.CanvasTexture(canvas)
-    //   particleMat = new THREE.PointsMaterial({
-    //     size: 0.25,
-    //     vertexColors: true,
-    //     transparent: true,
-    //     opacity: 0.8,
-    //     blending: THREE.AdditiveBlending,
-    //     depthWrite: false,
-    //     map: texture
-    //   })
-    //   particlePoints = new THREE.Points(particleGeo, particleMat)
-    //   particlePoints.position.copy(options.position || new THREE.Vector3(0, -5, 0))
-    //   scene.add(particlePoints)
-    // }
-
-    // const updateParticles = (deltaTime) => {
-    //   if (!particlePoints) return
-    //   const positions = particleGeo.attributes.position.array
-    //   const colors = particleGeo.attributes.color.array
-    //   const baseColor = new THREE.Color(options.particleColor || 0x69e2f2)
-    //   const fadeColor = new THREE.Color(options.pointColor || 0x2d4f73)
-    //   for (let i = 0; i < particleCount; i++) {
-    //     const ix = i * 3
-    //     positions[ix + 1] += particleVelocities[i] * deltaTime
-    //     positions[ix] += (Math.random() - 0.5) * 0.01
-    //     positions[ix + 2] += (Math.random() - 0.5) * 0.01
-    //     const t = Math.min(1, (positions[ix + 1] - particleArea.yMin) / (particleArea.yMax - particleArea.yMin))
-    //     const mixed = baseColor.clone().lerp(fadeColor, t)
-    //     colors[ix] = mixed.r
-    //     colors[ix + 1] = mixed.g
-    //     colors[ix + 2] = mixed.b
-    //     if (positions[ix + 1] > particleArea.yMax) {
-    //       positions[ix] = (Math.random() - 0.5) * particleArea.x * 2
-    //       positions[ix + 1] = particleArea.yMin
-    //       positions[ix + 2] = (Math.random() - 0.5) * particleArea.z * 2
-    //       particleVelocities[i] = 0.5 + Math.random() * 1.5
-    //     }
-    //   }
-    //   particleGeo.attributes.position.needsUpdate = true
-    //   particleGeo.attributes.color.needsUpdate = true
-    // }
-
-    // const addParticle = (count) => {
-    //   spawnParticles(count)
-    // }
-
-    // const removeParticle = () => {
-    //   if (!particlePoints) return
-    //   scene.remove(particlePoints)
-    //   particleGeo.dispose()
-    //   particleMat.dispose()
-    //   particleGeo = particleMat = particlePoints = null
-    //   particlePositions = particleVelocities = particleColors = null
-    // }
 
     const particleSystem = createParticleSystem(scene, {
       particleCount: 30,
@@ -449,23 +359,54 @@ const createProvinceLabel = (name, position, mapGroup) => {
   // 1. 创建文字画布纹理
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
-  canvas.width = 256
-  canvas.height = 64
 
-  // 基础样式（默认态）
+  const isJiangsu = name === '江苏省'
+  const DPR = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+  // 逻辑画布尺寸（CSS像素）
+  const lw = isJiangsu ? 360 : 256
+  const lh = isJiangsu ? 100 : 64
+
+  const baseFontSize = isJiangsu ? 56 : 28
+  // 实际像素尺寸提升以提高清晰度
+  canvas.width = Math.floor(lw * DPR)
+  canvas.height = Math.floor(lh * DPR)
+  // 保持样式尺寸为逻辑像素，便于后续布局/计算
+  canvas.style.width = `${lw}px`
+  canvas.style.height = `${lh}px`
+  // 将绘图坐标缩放到逻辑像素空间
+  ctx.scale(DPR, DPR)
+
+  // 基础绘制函数
   const drawText = (isHover) => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    // 背景（半透明圆角）
-    ctx.fillStyle = 'rgba(13, 22, 129, 0.3)'
-    ctx.roundRect(5, 5, canvas.width - 10, canvas.height - 10, 5)
-    ctx.fill()
+    ctx.clearRect(0, 0, lw, lh)
 
-    // 文字
-    ctx.font = `bold ${isHover ? 30 : 28}px Microsoft Yahei`
+    if (!isJiangsu) {
+      // 背景（半透明圆角）
+      ctx.fillStyle = 'rgba(13, 22, 129, 0.3)'
+      if (ctx.roundRect) ctx.roundRect(5, 5, lw - 10, lh - 10, 5)
+      ctx.fill()
+
+      // 文字
+      ctx.font = `bold ${isHover ? 30 : 28}px Microsoft Yahei`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#ffffff'
+      ctx.fillText(name, lw / 2, lh / 2)
+      return
+    }
+
+    // ===== 江苏特殊处理：透明背景 + 放大文字 + 倒影 =====
+    const fontSize = isHover ? 46 : 56
+    ctx.font = `bold ${fontSize}px Microsoft Yahei`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
+    const centerX = lw / 2
+    // 主文字绘制在画布上半部分（使用逻辑像素）
+    const mainY = lh * 0.35
     ctx.fillStyle = '#ffffff'
-    ctx.fillText(name, canvas.width / 2, canvas.height / 2)
+    ctx.fillText(name, centerX, mainY)
+
+    // （主画布只绘制主文字，反射单独用反射画布绘制，以便用不同透明/渐隐）
   }
 
   // 初始绘制
@@ -473,40 +414,134 @@ const createProvinceLabel = (name, position, mapGroup) => {
 
   // 2. 创建纹理和精灵材质
   const texture = new THREE.CanvasTexture(canvas)
+  // 使用线性过滤并关闭mipmap（画布纹理通常不需要mipmap）
+  texture.minFilter = THREE.LinearFilter
+  texture.magFilter = THREE.LinearFilter
+  texture.generateMipmaps = false
+  texture.needsUpdate = true
   const material = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
-    depthWrite: false, // 避免文字被地图遮挡
+    depthWrite: false, // 不写入深度
+    depthTest: false, // 关闭深度测试，保证文字总在顶层可见
+    // premultipliedAlpha: true, // 若需调整 alpha 表现，可启用
   })
 
-  // 3. 创建精灵（始终面向相机）
-  const sprite = new THREE.Sprite(material)
-  sprite.name = `label_${name}`
-  // 位置：省份中心上方（悬浮高度）
-  sprite.position.set(position.x, position.y + 2.2, position.z)
-  // 缩放（适配画布尺寸）
-  sprite.scale.set(2.5, 0.6, 1)
-  mapGroup.add(sprite)
+  // 3. 创建显示对象：江苏使用 Plane Mesh（主字 + 倒影），其它省份仍使用 Sprite
+  const baseY = isJiangsu ? position.y + 0.1 : position.y + 2.2
+  const baseZ = isJiangsu ? position.z + 8 : position.z
+  const basePos = new THREE.Vector3(position.x, baseY, baseZ)
 
-  // 4. 暴露更新方法（用于悬浮切换样式）
+  if (isJiangsu && typeof camera !== 'undefined') {
+    try {
+      const dirToCam = camera.position.clone().sub(basePos).setY(0).normalize()
+      basePos.add(dirToCam.multiplyScalar(1.0))
+    } catch (e) { }
+  }
+
+  const aspect = lw / lh
+  if (!isJiangsu) {
+    const sprite = new THREE.Sprite(material)
+    sprite.name = `label_${name}`
+    sprite.position.copy(basePos)
+    sprite.renderOrder = 9999
+    const baseWorldHeight = 0.6
+    sprite.scale.set(baseWorldHeight * aspect, baseWorldHeight, 1)
+    mapGroup.add(sprite)
+    return {
+      sprite,
+      updateHover: (isHover) => {
+        drawText(isHover)
+        texture.needsUpdate = true
+      },
+    }
+  }
+
+  // ===== 江苏：使用两块平面（主 + 倒影） =====
+  const baseWorldHeight = 1.8
+  const hoverWorldHeight = 2.0
+  const planeWidth = baseWorldHeight * aspect
+  const planeHeight = baseWorldHeight
+
+  const planeGeo = new THREE.PlaneGeometry(planeWidth, planeHeight)
+  const mainTex = texture
+  const mainMat = new THREE.MeshBasicMaterial({ map: mainTex, transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide })
+  const mainMesh = new THREE.Mesh(planeGeo, mainMat)
+  mainMesh.name = `label_${name}_main`
+  mainMesh.position.copy(basePos)
+  mainMesh.renderOrder = 9999
+  mapGroup.add(mainMesh)
+
+  // 创建单独反射画布并绘制倒影
+  const reflectCanvas = document.createElement('canvas')
+  reflectCanvas.width = canvas.width
+  reflectCanvas.height = canvas.height
+  reflectCanvas.style.width = canvas.style.width
+  reflectCanvas.style.height = canvas.style.height
+  const rctx = reflectCanvas.getContext('2d')
+  rctx.scale(DPR, DPR)
+  const centerX = lw / 2
+  const mainY = lh * 0.35
+  rctx.clearRect(0, 0, lw, lh)
+  rctx.font = `bold ${baseFontSize}px Microsoft Yahei`
+  rctx.textAlign = 'center'
+  rctx.textBaseline = 'middle'
+  // 在反射画布中正常方向绘制文字（非翻转），并降低透明度以呈现倒影效果
+  const reflectY = mainY + baseFontSize * 0.9
+  rctx.fillStyle = 'rgba(255,255,255,0.6)'
+  rctx.fillText(name, centerX, reflectY)
+  // 渐隐遮罩（从上到下透明）
+  rctx.globalCompositeOperation = 'destination-in'
+  const fade = rctx.createLinearGradient(0, mainY, 0, lh)
+  fade.addColorStop(0, 'rgba(0,0,0,1)')
+  fade.addColorStop(1, 'rgba(0,0,0,0)')
+  rctx.fillStyle = fade
+  rctx.fillRect(0, mainY, lw, lh - mainY)
+
+  const reflectTex = new THREE.CanvasTexture(reflectCanvas)
+  reflectTex.minFilter = THREE.LinearFilter
+  reflectTex.magFilter = THREE.LinearFilter
+  reflectTex.generateMipmaps = false
+  reflectTex.needsUpdate = true
+
+  const reflectMat = new THREE.MeshBasicMaterial({ map: reflectTex, transparent: true, opacity: 0.6, depthWrite: false, depthTest: false, side: THREE.DoubleSide })
+  const reflectMesh = new THREE.Mesh(planeGeo, reflectMat)
+  reflectMesh.name = `label_${name}_reflect`
+  reflectMesh.position.copy(basePos)
+  reflectMesh.position.y = basePos.y - planeHeight * 0.8
+  // 竖向翻转反射，使倒影呈镜像状态
+  reflectMesh.scale.y = -1
+  reflectMesh.renderOrder = 9998
+  mapGroup.add(reflectMesh)
+
   return {
-    sprite,
+    mesh: mainMesh,
+    reflection: reflectMesh,
     updateHover: (isHover) => {
+      // 更新主画布与纹理
       drawText(isHover)
-      texture.needsUpdate = true // 更新纹理
-      // 悬浮时轻微放大
-      gsap.to(sprite.scale, {
-        x: isHover ? 2.8 : 2.5,
-        y: isHover ? 0.68 : 0.6,
-        duration: 0.2,
-        ease: 'power1.out',
-      })
-      // 悬浮时轻微上移
-      gsap.to(sprite.position, {
-        y: isHover ? position.y + 0.9 : position.y + 0.8,
-        duration: 0.2,
-        ease: 'power1.out',
-      })
+      mainTex.needsUpdate = true
+
+      // 更新反射画布（保持文字正常方向，使用较低透明度并渐隐）
+      rctx.clearRect(0, 0, lw, lh)
+      rctx.font = `bold ${isHover ? 46 : 56}px Microsoft Yahei`
+      rctx.textAlign = 'center'
+      rctx.textBaseline = 'middle'
+      const reflectY = mainY + (isHover ? 46 : 56) * 0.9
+      rctx.fillStyle = 'rgba(255,255,255,0.6)'
+      rctx.fillText(name, centerX, reflectY)
+      rctx.globalCompositeOperation = 'destination-in'
+      const fade2 = rctx.createLinearGradient(0, mainY, 0, lh)
+      fade2.addColorStop(0, 'rgba(0,0,0,1)')
+      fade2.addColorStop(1, 'rgba(0,0,0,0)')
+      rctx.fillStyle = fade2
+      rctx.fillRect(0, mainY, lw, lh - mainY)
+      reflectTex.needsUpdate = true
+
+      // 动画
+      gsap.to(mainMesh.scale, { x: (isHover ? hoverWorldHeight : baseWorldHeight) * aspect, y: isHover ? hoverWorldHeight : baseWorldHeight, duration: 0.2 })
+      gsap.to(mainMesh.position, { y: isHover ? basePos.y + 0.4 : basePos.y, duration: 0.2 })
+      gsap.to(reflectMesh.position, { y: isHover ? basePos.y - planeHeight * 0.5 : basePos.y - planeHeight * 0.6, duration: 0.2 })
     },
   }
 }
@@ -659,7 +694,7 @@ const createGlowBar = (cityCenter, cityName, barHeight) => {
     blending: THREE.AdditiveBlending,
   })
   const baseMesh = new THREE.Mesh(baseGeo, baseMat)
-  baseMesh.position.set(cityCenter.x, cityCenter.y + 0.05, cityCenter.z) // 柱体底部下方
+  baseMesh.position.set(cityCenter.x, cityCenter.y + 0.10, cityCenter.z) // 柱体底部下方
   mapGroup.add(baseMesh)
 
   // 4.顶部市名标签
@@ -685,6 +720,9 @@ const createGlowBar = (cityCenter, cityName, barHeight) => {
   // 调整文字标签样式，匹配科技感
   textLabel.sprite.scale.set(1, 0.5, 1) // 缩小标签，更精致
   textLabel.updateHover(true)
+
+  // 保存市中心以便生成飞线（深拷贝位置）
+  cityCenters.push({ name: cityName, position: cityCenter.clone() })
 
   return { cylinderMesh, glowMesh }
 }
@@ -740,6 +778,9 @@ const createMap = () => {
       mapGroup.name = 'provinceGroup'
       mapGroup.position.set(0, 0, 0) // 悬浮在地面上方
       scene.add(mapGroup)
+
+      // 重置 cityCenters，避免重复记录（例如二次渲染时）
+      cityCenters.length = 0
 
       // 3. 关键：D3投影配置（完整中国+江苏居中）
       const jiangsuCenter = [119.84, 32.98] // 江苏地理中心
@@ -832,7 +873,7 @@ const createMap = () => {
               // shininess: 80,                          // 光泽度（明亮）
               // side: THREE.DoubleSide,
               opacity: 0.8,
-              transparent: true,
+              transparent: false,
             })
           } else {
             // 其他省份：基础暗蓝材质
@@ -869,7 +910,7 @@ const createMap = () => {
         })
       })
 
-      // 6.渲染江苏13市边界（加辅助点调试）
+      // 6.渲染江苏13市边界
       jiangsuCityGeoJson.features.forEach((cityFeature) => {
         if (!cityFeature?.geometry) return
         const cityName = cityFeature.properties?.name || '未知城市'
@@ -901,6 +942,29 @@ const createMap = () => {
 
           // 修复4：确保有有效点再渲染
           if (linePoints.length < 4) return
+
+          // 创建市级面并保存到 cityMeshes（防止遮挡柱子，设置半透明）
+          const shape = new THREE.Shape(linePoints.map(p => new THREE.Vector2(p.x, p.z)))
+          const cityGeom = new THREE.ExtrudeGeometry(shape, { depth: 0.05, bevelEnabled: false })
+          cityGeom.rotateX(Math.PI / 2)
+          const cityMat = new THREE.MeshLambertMaterial({
+            color: 0x96cce5, // 可调整为地图风格颜色
+            transparent: true,
+            opacity: 0.3,
+          })
+          const cityMesh = new THREE.Mesh(cityGeom, cityMat)
+          cityMesh.position.y = STYLE.jiangsu.height + 0.35
+          cityMesh.userData = {
+            city: cityName,
+            // origColor: cityMat.color.getHex(),
+            // origOpacity: cityMat.opacity,
+          }
+          mapGroup.add(cityMesh)
+
+          // 保存（可能一个城市有多块）
+          if (!cityMeshes.has(cityName)) cityMeshes.set(cityName, [])
+          cityMeshes.get(cityName).push(cityMesh)
+
           createGlowBar(cityCenter, cityName, barHeight)
           const lineGeom = new THREE.BufferGeometry().setFromPoints(linePoints)
           const line = new THREE.LineSegments(
@@ -911,7 +975,9 @@ const createMap = () => {
               depthTest: true,
             }),
           )
-          line.renderOrder = 999
+          // line.renderOrder = 999
+          line.position.y = 0.05
+          console.log('line.position', line.position)
           mapGroup.add(line)
         })
       })
@@ -923,6 +989,120 @@ const createMap = () => {
   // 调用渲染
   const loadChinaMap = drawChinaMapWithJiangsuCenter()
   return { loadChinaMap }
+}
+
+// ===== 飞线特效实现 =====
+function createFlyLines(count = 6) {
+  if (!cityCenters || cityCenters.length < 2) return
+  removeFlyLines()
+  flyLineGroup = new THREE.Group()
+  flyLineGroup.name = 'flyLineGroup'
+  mapGroup.add(flyLineGroup)
+  flyLines = []
+
+  for (let i = 0; i < count; i++) {
+    const a = cityCenters[Math.floor(Math.random() * cityCenters.length)]
+    let b = cityCenters[Math.floor(Math.random() * cityCenters.length)]
+    if (!a || !b || a === b) continue
+
+    const start = a.position.clone()
+    const end = b.position.clone()
+    const mid = start.clone().lerp(end, 0.5)
+    mid.y += 3 + Math.random() * 3
+
+    const curve = new THREE.QuadraticBezierCurve3(start, mid, end)
+    const points = curve.getPoints(80)
+    const geometry = new THREE.BufferGeometry().setFromPoints(points)
+
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x69e2f2, })
+
+    const line = new THREE.Line(geometry, lineMat)
+    line.computeLineDistances()
+    flyLineGroup.add(line)
+
+    // 小球（流光）使用 Sprite 画布纹理
+    const canvas = document.createElement('canvas')
+    canvas.width = 64
+    canvas.height = 64
+    const ctx = canvas.getContext('2d')
+    const grad = ctx.createRadialGradient(32, 32, 2, 32, 32, 30)
+    grad.addColorStop(0, 'rgba(255,255,255,1)')
+    grad.addColorStop(0.2, 'rgba(105,226,242,1)')
+    grad.addColorStop(1, 'rgba(105,226,242,0)')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, 64, 64)
+    const tex = new THREE.CanvasTexture(canvas)
+    const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthWrite: false })
+    const sprite = new THREE.Sprite(mat)
+    sprite.scale.set(0.6, 0.6, 1)
+    flyLineGroup.add(sprite)
+
+    flyLines.push({ curve, line, comet: sprite, speed: 0.2 + Math.random() * 0.6, progress: Math.random() })
+  }
+}
+
+function removeFlyLines() {
+  if (!flyLineGroup) return
+  flyLines.forEach((f) => {
+    try {
+      if (f.line.geometry) f.line.geometry.dispose()
+      if (f.line.material) f.line.material.dispose()
+      if (f.comet.material && f.comet.material.map) f.comet.material.map.dispose()
+      if (f.comet.material) f.comet.material.dispose()
+    } catch (e) {
+      console.warn('dispose error', e)
+    }
+  })
+  if (mapGroup && flyLineGroup) mapGroup.remove(flyLineGroup)
+  flyLineGroup = null
+  flyLines = []
+}
+
+function addEffect() {
+  flyEffectActive.value = !flyEffectActive.value
+  if (flyEffectActive.value) {
+    createFlyLines(8)
+  } else {
+    removeFlyLines()
+  }
+}
+
+function updateFlyLines(deltaTime) {
+  if (!flyEffectActive.value || !flyLines.length) return
+  flyLines.forEach((f) => {
+    f.progress += f.speed * deltaTime * 0.3
+    if (f.progress > 1) f.progress -= 1
+    const pos = f.curve.getPointAt(f.progress)
+    f.comet.position.copy(pos)
+    if (f.line && f.line.material) f.line.material.dashOffset = -f.progress * 10
+    const s = 0.4 + Math.sin(f.progress * Math.PI * 2) * 0.18
+    f.comet.scale.set(s, s, 1)
+  })
+}
+
+function highlightCity(cityName) {
+  // 恢复上一个
+  if (highlightedCity && cityMeshes.has(highlightedCity)) {
+    cityMeshes.get(highlightedCity).forEach(mesh => {
+      if (mesh.userData.origColor) mesh.material.color.set(mesh.userData.origColor)
+      mesh.material.opacity = mesh.userData.origOpacity ?? 0.8
+    })
+  }
+
+  if (!cityName) {
+    highlightedCity = null
+    return
+  }
+
+  if (cityMeshes.has(cityName)) {
+    cityMeshes.get(cityName).forEach(mesh => {
+      mesh.userData.origColor = mesh.userData.origColor || mesh.material.color.getHex()
+      mesh.userData.origOpacity = mesh.userData.origOpacity ?? mesh.material.opacity
+      mesh.material.color.set(0xa6cde6) // 高亮色，可自行调整
+      mesh.material.opacity = 1
+    })
+    highlightedCity = cityName
+  }
 }
 const initScence = () => {
   // 1.创建场景
@@ -943,12 +1123,17 @@ const initScence = () => {
   render = new THREE.WebGLRenderer({ antialias: true })
   render.setSize(window.innerWidth, window.innerHeight)
   mapWeb.value.appendChild(render.domElement)
+
+  scene.fog = new THREE.Fog(0x192b41, 10, 100)
+  render.setClearColor(scene.background)
+  window.scene = scene
   //添加灯光 AmbientLight, DirectionalLight
   const light = new THREE.AmbientLight(0xfaaaaa)
   scene.add(light)
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
   directionalLight.position.set(0, 0, 1)
   scene.add(directionalLight)
+
 
   // 4.添加控制器
   controls = new OrbitControls(camera, render.domElement)
@@ -1209,19 +1394,29 @@ const initScence = () => {
       provinceLabels.get(hoveredProvince)?.updateHover(false)
       hoveredProvince = null
     }
+  }
+  // 绑定事件
+  window.addEventListener('mousemove', onMouseMove)
 
-    // 设置新悬浮状态
-    if (intersects.length) {
-      const provinceName = intersects[0].object.userData.province
-      if (provinceName && provinceName !== hoveredProvince) {
-        hoveredProvince = provinceName
-        provinceLabels.get(provinceName)?.updateHover(true)
-      }
+  // 点击处理：优先检测 cityMeshes 中的 Mesh
+  function onMapClick(event) {
+    if (!mapGroup) return
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+    raycaster.setFromCamera(mouse, camera)
+
+    const meshes = Array.from(cityMeshes.values()).flat()
+    const intersects = raycaster.intersectObjects(meshes)
+    if (intersects.length > 0) {
+      const cityName = intersects[0].object.userData.city
+      highlightCity(cityName)
+    } else {
+      highlightCity(null) // 点击空白取消高亮
     }
   }
 
-  // 绑定事件
-  window.addEventListener('mousemove', onMouseMove)
+  // 注册/移除事件
+  window.addEventListener('click', onMapClick)
 
   // 组件卸载时移除事件
   onUnmounted(() => {
@@ -1229,6 +1424,10 @@ const initScence = () => {
     window.removeEventListener('wheel', onUserInteraction)
     window.removeEventListener('click', onUserInteraction)
     window.removeEventListener('dblclick', switchToFarView)
+    window.removeEventListener('click', onMapClick)
+
+    // 卸载时清理飞线资源
+    removeFlyLines()
   })
 
   let lastTime = performance.now()
@@ -1244,6 +1443,18 @@ const initScence = () => {
     if (gridSystem && gridSystem.updateParticles) {
       gridSystem.updateParticles(deltaTime)
     }
+    // 飞线更新
+    updateFlyLines(deltaTime)
+
+    // 让使用 Plane 的标签始终面向相机（例如江苏省）
+    try {
+      // 只让使用 Sprite 的标签面向相机（非江苏平面不需要始终面向相机）
+      provinceLabels.forEach((label) => {
+        if (label.sprite) {
+          label.sprite.quaternion.copy(camera.quaternion)
+        }
+      })
+    } catch (e) { }
 
     render.render(scene, camera)
   }
