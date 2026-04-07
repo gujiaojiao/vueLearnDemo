@@ -3,8 +3,16 @@
     <div class="mapWeb" ref="mapWeb">
       <div class="addContent">
         <span>增加3D特效</span>
-        <el-button :class="flyEffectActive ? 'activeButton' : ''" @click="addEffect">飞线特效</el-button>
-        <el-button :class="particleEffect ? 'activeButton' : ''" @click="addParticle">
+        <el-button
+          :class="flyEffectActive ? 'activeButton' : ''"
+          @click="addEffect"
+        >
+          飞线特效
+        </el-button>
+        <el-button
+          :class="particleEffect ? 'activeButton' : ''"
+          @click="addParticle"
+        >
           粒子特效
         </el-button>
       </div>
@@ -314,7 +322,7 @@ const createParticleSystem = (scene, options = {}) => {
       const t = Math.min(
         1,
         (positions[ix + 1] - particleArea.yMin) /
-        (particleArea.yMax - particleArea.yMin),
+          (particleArea.yMax - particleArea.yMin),
       )
       const mixed = baseColor.clone().lerp(fadeColor, t)
       colors[ix] = mixed.r
@@ -436,7 +444,7 @@ const createProvinceLabel = (name, position, mapGroup) => {
     try {
       const dirToCam = camera.position.clone().sub(basePos).setY(0).normalize()
       basePos.add(dirToCam.multiplyScalar(1.0))
-    } catch (e) { }
+    } catch (e) {}
   }
 
   const aspect = lw / lh
@@ -465,7 +473,13 @@ const createProvinceLabel = (name, position, mapGroup) => {
 
   const planeGeo = new THREE.PlaneGeometry(planeWidth, planeHeight)
   const mainTex = texture
-  const mainMat = new THREE.MeshBasicMaterial({ map: mainTex, transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide })
+  const mainMat = new THREE.MeshBasicMaterial({
+    map: mainTex,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    side: THREE.DoubleSide,
+  })
   const mainMesh = new THREE.Mesh(planeGeo, mainMat)
   mainMesh.name = `label_${name}_main`
   mainMesh.position.copy(basePos)
@@ -504,7 +518,14 @@ const createProvinceLabel = (name, position, mapGroup) => {
   reflectTex.generateMipmaps = false
   reflectTex.needsUpdate = true
 
-  const reflectMat = new THREE.MeshBasicMaterial({ map: reflectTex, transparent: true, opacity: 0.6, depthWrite: false, depthTest: false, side: THREE.DoubleSide })
+  const reflectMat = new THREE.MeshBasicMaterial({
+    map: reflectTex,
+    transparent: true,
+    opacity: 0.6,
+    depthWrite: false,
+    depthTest: false,
+    side: THREE.DoubleSide,
+  })
   const reflectMesh = new THREE.Mesh(planeGeo, reflectMat)
   reflectMesh.name = `label_${name}_reflect`
   reflectMesh.position.copy(basePos)
@@ -539,9 +560,21 @@ const createProvinceLabel = (name, position, mapGroup) => {
       reflectTex.needsUpdate = true
 
       // 动画
-      gsap.to(mainMesh.scale, { x: (isHover ? hoverWorldHeight : baseWorldHeight) * aspect, y: isHover ? hoverWorldHeight : baseWorldHeight, duration: 0.2 })
-      gsap.to(mainMesh.position, { y: isHover ? basePos.y + 0.4 : basePos.y, duration: 0.2 })
-      gsap.to(reflectMesh.position, { y: isHover ? basePos.y - planeHeight * 0.5 : basePos.y - planeHeight * 0.6, duration: 0.2 })
+      gsap.to(mainMesh.scale, {
+        x: (isHover ? hoverWorldHeight : baseWorldHeight) * aspect,
+        y: isHover ? hoverWorldHeight : baseWorldHeight,
+        duration: 0.2,
+      })
+      gsap.to(mainMesh.position, {
+        y: isHover ? basePos.y + 0.4 : basePos.y,
+        duration: 0.2,
+      })
+      gsap.to(reflectMesh.position, {
+        y: isHover
+          ? basePos.y - planeHeight * 0.5
+          : basePos.y - planeHeight * 0.6,
+        duration: 0.2,
+      })
     },
   }
 }
@@ -694,7 +727,7 @@ const createGlowBar = (cityCenter, cityName, barHeight) => {
     blending: THREE.AdditiveBlending,
   })
   const baseMesh = new THREE.Mesh(baseGeo, baseMat)
-  baseMesh.position.set(cityCenter.x, cityCenter.y + 0.10, cityCenter.z) // 柱体底部下方
+  baseMesh.position.set(cityCenter.x, cityCenter.y + 0.1, cityCenter.z) // 柱体底部下方
   mapGroup.add(baseMesh)
 
   // 4.顶部市名标签
@@ -760,13 +793,17 @@ const createMap = () => {
       // const res = await fetch(
       //   'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json',
       // )
-      const res = await fetch(`${import.meta.env.BASE_URL}data/100000_full.json`)
+      const res = await fetch(
+        `${import.meta.env.BASE_URL}data/100000_full.json`,
+      )
       const chinaGeoJson = await res.json()
       // 江苏市级数据（13市边界）
       // const resJiangsuCity = await fetch(
       //   'https://geo.datav.aliyun.com/areas_v3/bound/320000_full.json',
       // )
-      const resJiangsuCity = await fetch(`${import.meta.env.BASE_URL}data/320000_full.json`)
+      const resJiangsuCity = await fetch(
+        `${import.meta.env.BASE_URL}data/320000_full.json`,
+      )
       const jiangsuCityGeoJson = await resJiangsuCity.json()
       if (!chinaGeoJson?.features || !jiangsuCityGeoJson?.features) return
 
@@ -944,8 +981,13 @@ const createMap = () => {
           if (linePoints.length < 4) return
 
           // 创建市级面并保存到 cityMeshes（防止遮挡柱子，设置半透明）
-          const shape = new THREE.Shape(linePoints.map(p => new THREE.Vector2(p.x, p.z)))
-          const cityGeom = new THREE.ExtrudeGeometry(shape, { depth: 0.05, bevelEnabled: false })
+          const shape = new THREE.Shape(
+            linePoints.map((p) => new THREE.Vector2(p.x, p.z)),
+          )
+          const cityGeom = new THREE.ExtrudeGeometry(shape, {
+            depth: 0.05,
+            bevelEnabled: false,
+          })
           cityGeom.rotateX(Math.PI / 2)
           const cityMat = new THREE.MeshLambertMaterial({
             color: 0x96cce5, // 可调整为地图风格颜色
@@ -1014,7 +1056,7 @@ function createFlyLines(count = 6) {
     const points = curve.getPoints(80)
     const geometry = new THREE.BufferGeometry().setFromPoints(points)
 
-    const lineMat = new THREE.LineBasicMaterial({ color: 0x69e2f2, })
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x69e2f2 })
 
     const line = new THREE.Line(geometry, lineMat)
     line.computeLineDistances()
@@ -1032,12 +1074,22 @@ function createFlyLines(count = 6) {
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, 64, 64)
     const tex = new THREE.CanvasTexture(canvas)
-    const mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthWrite: false })
+    const mat = new THREE.SpriteMaterial({
+      map: tex,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
     const sprite = new THREE.Sprite(mat)
     sprite.scale.set(0.6, 0.6, 1)
     flyLineGroup.add(sprite)
 
-    flyLines.push({ curve, line, comet: sprite, speed: 0.2 + Math.random() * 0.6, progress: Math.random() })
+    flyLines.push({
+      curve,
+      line,
+      comet: sprite,
+      speed: 0.2 + Math.random() * 0.6,
+      progress: Math.random(),
+    })
   }
 }
 
@@ -1047,7 +1099,8 @@ function removeFlyLines() {
     try {
       if (f.line.geometry) f.line.geometry.dispose()
       if (f.line.material) f.line.material.dispose()
-      if (f.comet.material && f.comet.material.map) f.comet.material.map.dispose()
+      if (f.comet.material && f.comet.material.map)
+        f.comet.material.map.dispose()
       if (f.comet.material) f.comet.material.dispose()
     } catch (e) {
       console.warn('dispose error', e)
@@ -1083,8 +1136,9 @@ function updateFlyLines(deltaTime) {
 function highlightCity(cityName) {
   // 恢复上一个
   if (highlightedCity && cityMeshes.has(highlightedCity)) {
-    cityMeshes.get(highlightedCity).forEach(mesh => {
-      if (mesh.userData.origColor) mesh.material.color.set(mesh.userData.origColor)
+    cityMeshes.get(highlightedCity).forEach((mesh) => {
+      if (mesh.userData.origColor)
+        mesh.material.color.set(mesh.userData.origColor)
       mesh.material.opacity = mesh.userData.origOpacity ?? 0.8
     })
   }
@@ -1095,9 +1149,11 @@ function highlightCity(cityName) {
   }
 
   if (cityMeshes.has(cityName)) {
-    cityMeshes.get(cityName).forEach(mesh => {
-      mesh.userData.origColor = mesh.userData.origColor || mesh.material.color.getHex()
-      mesh.userData.origOpacity = mesh.userData.origOpacity ?? mesh.material.opacity
+    cityMeshes.get(cityName).forEach((mesh) => {
+      mesh.userData.origColor =
+        mesh.userData.origColor || mesh.material.color.getHex()
+      mesh.userData.origOpacity =
+        mesh.userData.origOpacity ?? mesh.material.opacity
       mesh.material.color.set(0xa6cde6) // 高亮色，可自行调整
       mesh.material.opacity = 1
     })
@@ -1133,7 +1189,6 @@ const initScence = () => {
   const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
   directionalLight.position.set(0, 0, 1)
   scene.add(directionalLight)
-
 
   // 4.添加控制器
   controls = new OrbitControls(camera, render.domElement)
@@ -1301,7 +1356,7 @@ const initScence = () => {
       .name('直射光颜色')
     dirLightFolder.add(lightParams2, 'intensity', 0, 1, 0.1).name('直射光强度')
     dirLightFolder.add(lightParams2, 'x', -10, 10, 1).name('直射光x轴位置')
-  } catch (e) { }
+  } catch (e) {}
 
   // const loadChinaMapData = async () => {
   //   try {
@@ -1454,7 +1509,7 @@ const initScence = () => {
           label.sprite.quaternion.copy(camera.quaternion)
         }
       })
-    } catch (e) { }
+    } catch (e) {}
 
     render.render(scene, camera)
   }
