@@ -10,10 +10,16 @@
       </div> -->
       <div class="addContent">
         <span>增加3D特效</span>
-        <el-button :class="flyEffectActive ? 'activeButton' : ''" @click="addEffect">
+        <el-button
+          :class="flyEffectActive ? 'activeButton' : ''"
+          @click="addEffect"
+        >
           飞线特效
         </el-button>
-        <el-button :class="particleEffect ? 'activeButton' : ''" @click="addParticle">
+        <el-button
+          :class="particleEffect ? 'activeButton' : ''"
+          @click="addParticle"
+        >
           粒子特效
         </el-button>
       </div>
@@ -327,7 +333,7 @@ const createParticleSystem = (scene, options = {}) => {
       const t = Math.min(
         1,
         (positions[ix + 1] - particleArea.yMin) /
-        (particleArea.yMax - particleArea.yMin),
+          (particleArea.yMax - particleArea.yMin),
       )
       const mixed = baseColor.clone().lerp(fadeColor, t)
       colors[ix] = mixed.r
@@ -449,7 +455,7 @@ const createProvinceLabel = (name, position, mapGroup) => {
     try {
       const dirToCam = camera.position.clone().sub(basePos).setY(0).normalize()
       basePos.add(dirToCam.multiplyScalar(1.0))
-    } catch (e) { }
+    } catch (e) {}
   }
 
   const aspect = lw / lh
@@ -1361,7 +1367,7 @@ const initScence = () => {
       .name('直射光颜色')
     dirLightFolder.add(lightParams2, 'intensity', 0, 1, 0.1).name('直射光强度')
     dirLightFolder.add(lightParams2, 'x', -10, 10, 1).name('直射光x轴位置')
-  } catch (e) { }
+  } catch (e) {}
 
   // const loadChinaMapData = async () => {
   //   try {
@@ -1514,7 +1520,7 @@ const initScence = () => {
           label.sprite.quaternion.copy(camera.quaternion)
         }
       })
-    } catch (e) { }
+    } catch (e) {}
 
     render.render(scene, camera)
   }

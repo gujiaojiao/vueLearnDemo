@@ -169,7 +169,8 @@ export default { name: 'RoseChart' }
   // 科技感边框
   border: 1px solid transparent;
   background-clip: padding-box;
-  box-shadow: 0 0 20px rgba(79, 195, 247, 0.08),
+  box-shadow:
+    0 0 20px rgba(79, 195, 247, 0.08),
     inset 0 0 30px rgba(79, 195, 247, 0.03);
 
   // 渐变边框效果
@@ -187,9 +188,12 @@ export default { name: 'RoseChart' }
       rgba(79, 195, 247, 0.1) 70%,
       rgba(79, 195, 247, 0.4) 100%
     );
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
       linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
