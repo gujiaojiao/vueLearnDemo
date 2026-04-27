@@ -35,7 +35,8 @@ const handleExit = () => {
   justify-content: space-between;
   align-items: center;
   padding: 0 2vw;
-  background: linear-gradient(180deg,
+  background: linear-gradient(
+    180deg,
     rgba(8, 18, 38, 0.95) 0%,
     rgba(8, 18, 38, 0.7) 100%
   );
@@ -50,7 +51,8 @@ const handleExit = () => {
     left: 0;
     width: 100%;
     height: 2px;
-    background: linear-gradient(90deg,
+    background: linear-gradient(
+      90deg,
       transparent 0%,
       rgba(79, 195, 247, 0.8) 20%,
       rgba(79, 195, 247, 1) 50%,
@@ -79,7 +81,8 @@ const handleExit = () => {
       transform: translateY(-50%);
       width: 100%;
       height: 2.5rem;
-      background: radial-gradient(ellipse at center,
+      background: radial-gradient(
+        ellipse at center,
         rgba(79, 195, 247, 0.15) 0%,
         transparent 70%
       );
@@ -107,7 +110,8 @@ const handleExit = () => {
       inset: 0;
       border-radius: inherit;
       padding: 1px;
-      background: linear-gradient(135deg,
+      background: linear-gradient(
+        135deg,
         rgba(79, 195, 247, 0.6) 0%,
         transparent 50%,
         rgba(79, 195, 247, 0.6) 100%

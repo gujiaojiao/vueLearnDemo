@@ -12,7 +12,9 @@
       <span class="city-chip">{{ currentCity }}</span>
       <span class="summary-chip warning">预警 {{ warningCount }}</span>
       <span class="summary-chip follow">待跟进 {{ followCount }}</span>
-      <span class="summary-chip status">{{ shouldAutoRotate ? '自动巡检' : '静态展示' }}</span>
+      <span class="summary-chip status">
+        {{ shouldAutoRotate ? '自动巡检' : '静态展示' }}
+      </span>
     </div>
 
     <div class="table-header">
@@ -21,9 +23,17 @@
       <span>状态</span>
     </div>
 
-    <div class="table-body" @mouseenter="isPaused = true" @mouseleave="isPaused = false">
+    <div
+      class="table-body"
+      @mouseenter="isPaused = true"
+      @mouseleave="isPaused = false"
+    >
       <transition-group name="row-shift" tag="div" class="rows-wrapper">
-        <div v-for="(item, index) in visibleRows" :key="item.city + item.unit + index" class="table-row">
+        <div
+          v-for="(item, index) in visibleRows"
+          :key="item.city + item.unit + index"
+          class="table-row"
+        >
           <div class="row-glow"></div>
           <div class="unit-info">
             <span class="city">
@@ -195,7 +205,8 @@ export default { name: 'WarningTable' }
     rgba(15, 35, 60, 0.84)
   );
   background-clip: padding-box;
-  box-shadow: 0 0 22px rgba(79, 195, 247, 0.09),
+  box-shadow:
+    0 0 22px rgba(79, 195, 247, 0.09),
     inset 0 0 30px rgba(79, 195, 247, 0.04);
   backdrop-filter: blur(4px);
 
@@ -213,9 +224,12 @@ export default { name: 'WarningTable' }
       rgba(79, 195, 247, 0.08) 72%,
       rgba(79, 195, 247, 0.42) 100%
     );
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
       linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
@@ -378,7 +392,9 @@ export default { name: 'WarningTable' }
       rgba(79, 195, 247, 0.1),
       rgba(79, 195, 247, 0.02)
     );
-    transition: transform 0.35s ease, opacity 0.35s ease;
+    transition:
+      transform 0.35s ease,
+      opacity 0.35s ease;
     overflow: hidden;
 
     &:hover {

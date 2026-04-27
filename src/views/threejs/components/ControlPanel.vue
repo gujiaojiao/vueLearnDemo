@@ -7,12 +7,20 @@
       <span>特效控制</span>
     </div>
     <div class="panel-content">
-      <button class="effect-btn" :class="{ active: flyEffectActive }" @click="$emit('toggleFlyEffect')">
+      <button
+        class="effect-btn"
+        :class="{ active: flyEffectActive }"
+        @click="$emit('toggleFlyEffect')"
+      >
         <span class="btn-icon">◈</span>
         <span class="btn-text">飞线特效</span>
         <span class="btn-status">{{ flyEffectActive ? 'ON' : 'OFF' }}</span>
       </button>
-      <button class="effect-btn" :class="{ active: particleEffect }" @click="$emit('toggleParticleEffect')">
+      <button
+        class="effect-btn"
+        :class="{ active: particleEffect }"
+        @click="$emit('toggleParticleEffect')"
+      >
         <span class="btn-icon">◆</span>
         <span class="btn-text">粒子特效</span>
         <span class="btn-status">{{ particleEffect ? 'ON' : 'OFF' }}</span>
@@ -55,7 +63,8 @@ defineEmits<{
   flex-direction: column;
   border: 1px solid transparent;
   background-clip: padding-box;
-  box-shadow: 0 0 20px rgba(79, 195, 247, 0.08),
+  box-shadow:
+    0 0 20px rgba(79, 195, 247, 0.08),
     inset 0 0 30px rgba(79, 195, 247, 0.03);
 
   // 渐变边框效果
@@ -73,9 +82,12 @@ defineEmits<{
       rgba(79, 195, 247, 0.1) 70%,
       rgba(79, 195, 247, 0.4) 100%
     );
-    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
       linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;

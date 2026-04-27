@@ -4,14 +4,25 @@
     <HeaderBar />
     <!-- 实时数字卡片 -->
     <StatCard title="接种单位总数" :value="1102" unit="家" position="left" />
-    <StatCard title="平均完成率" :value="92.34" unit="%" position="right" :decimals="2" />
+    <StatCard
+      title="平均完成率"
+      :value="92.34"
+      unit="%"
+      position="right"
+      :decimals="2"
+    />
     <div class="mapWeb" ref="mapWeb">
       <!-- ECharts 玫瑰图组件 -->
       <RoseChart />
       <!-- ECharts 柱状图组件 -->
       <BarChart />
       <!-- 控制面板 -->
-      <ControlPanel :flyEffectActive="flyEffectActive" :particleEffect="particleEffect" @toggleFlyEffect="addEffect" @toggleParticleEffect="addParticle" />
+      <ControlPanel
+        :flyEffectActive="flyEffectActive"
+        :particleEffect="particleEffect"
+        @toggleFlyEffect="addEffect"
+        @toggleParticleEffect="addParticle"
+      />
       <WarningTable :rows="warningTableData" :active-city="activeCity" />
       <!-- 趋势折线图 -->
       <TrendChart />
@@ -71,19 +82,110 @@ let cityCenters = [] // 存储所有市中心位置 { name, position: Vector3 }
 const flyEffectActive = ref(false)
 const activeCity = ref('全省')
 const warningTableData = [
-  { city: '南京市', unit: '鼓楼区接种中心', rate: 84.3, delta: -2.4, statusText: '预警', statusClass: 'warning' },
-  { city: '苏州市', unit: '工业园区接种门诊', rate: 86.1, delta: -1.7, statusText: '预警', statusClass: 'warning' },
-  { city: '无锡市', unit: '梁溪区妇幼保健院', rate: 88.5, delta: -0.9, statusText: '待跟进', statusClass: 'follow' },
-  { city: '常州市', unit: '新北区公共卫生中心', rate: 90.8, delta: 0.6, statusText: '待跟进', statusClass: 'follow' },
-  { city: '南通市', unit: '崇川区社区卫生中心', rate: 92.4, delta: 1.2, statusText: '正常', statusClass: 'normal' },
-  { city: '徐州市', unit: '云龙区疾控接种点', rate: 83.6, delta: -3.1, statusText: '预警', statusClass: 'warning' },
-  { city: '盐城市', unit: '亭湖区预防接种门诊', rate: 87.3, delta: -1.1, statusText: '待跟进', statusClass: 'follow' },
-  { city: '扬州市', unit: '广陵区接种服务站', rate: 91.6, delta: 0.8, statusText: '正常', statusClass: 'normal' },
-  { city: '泰州市', unit: '海陵区疾控中心', rate: 89.1, delta: -0.4, statusText: '待跟进', statusClass: 'follow' },
-  { city: '宿迁市', unit: '宿城区接种门诊', rate: 85.2, delta: -2.2, statusText: '预警', statusClass: 'warning' },
-  { city: '镇江市', unit: '京口区社区卫生院', rate: 90.2, delta: 0.3, statusText: '待跟进', statusClass: 'follow' },
-  { city: '连云港市', unit: '海州区接种中心', rate: 82.9, delta: -2.8, statusText: '预警', statusClass: 'warning' },
-  { city: '淮安市', unit: '淮阴区接种中心', rate: 86.5, delta: -0.5, statusText: '待跟进', statusClass: 'follow' }
+  {
+    city: '南京市',
+    unit: '鼓楼区接种中心',
+    rate: 84.3,
+    delta: -2.4,
+    statusText: '预警',
+    statusClass: 'warning',
+  },
+  {
+    city: '苏州市',
+    unit: '工业园区接种门诊',
+    rate: 86.1,
+    delta: -1.7,
+    statusText: '预警',
+    statusClass: 'warning',
+  },
+  {
+    city: '无锡市',
+    unit: '梁溪区妇幼保健院',
+    rate: 88.5,
+    delta: -0.9,
+    statusText: '待跟进',
+    statusClass: 'follow',
+  },
+  {
+    city: '常州市',
+    unit: '新北区公共卫生中心',
+    rate: 90.8,
+    delta: 0.6,
+    statusText: '待跟进',
+    statusClass: 'follow',
+  },
+  {
+    city: '南通市',
+    unit: '崇川区社区卫生中心',
+    rate: 92.4,
+    delta: 1.2,
+    statusText: '正常',
+    statusClass: 'normal',
+  },
+  {
+    city: '徐州市',
+    unit: '云龙区疾控接种点',
+    rate: 83.6,
+    delta: -3.1,
+    statusText: '预警',
+    statusClass: 'warning',
+  },
+  {
+    city: '盐城市',
+    unit: '亭湖区预防接种门诊',
+    rate: 87.3,
+    delta: -1.1,
+    statusText: '待跟进',
+    statusClass: 'follow',
+  },
+  {
+    city: '扬州市',
+    unit: '广陵区接种服务站',
+    rate: 91.6,
+    delta: 0.8,
+    statusText: '正常',
+    statusClass: 'normal',
+  },
+  {
+    city: '泰州市',
+    unit: '海陵区疾控中心',
+    rate: 89.1,
+    delta: -0.4,
+    statusText: '待跟进',
+    statusClass: 'follow',
+  },
+  {
+    city: '宿迁市',
+    unit: '宿城区接种门诊',
+    rate: 85.2,
+    delta: -2.2,
+    statusText: '预警',
+    statusClass: 'warning',
+  },
+  {
+    city: '镇江市',
+    unit: '京口区社区卫生院',
+    rate: 90.2,
+    delta: 0.3,
+    statusText: '待跟进',
+    statusClass: 'follow',
+  },
+  {
+    city: '连云港市',
+    unit: '海州区接种中心',
+    rate: 82.9,
+    delta: -2.8,
+    statusText: '预警',
+    statusClass: 'warning',
+  },
+  {
+    city: '淮安市',
+    unit: '淮阴区接种中心',
+    rate: 86.5,
+    delta: -0.5,
+    statusText: '待跟进',
+    statusClass: 'follow',
+  },
 ]
 
 const cityVaccinationData = [
@@ -390,7 +492,7 @@ const createParticleSystem = (scene, options = {}) => {
       const t = Math.min(
         1,
         (positions[ix + 1] - particleArea.yMin) /
-        (particleArea.yMax - particleArea.yMin),
+          (particleArea.yMax - particleArea.yMin),
       )
       const mixed = baseColor.clone().lerp(fadeColor, t)
       colors[ix] = mixed.r
@@ -515,7 +617,7 @@ const createProvinceLabel = (name, position, mapGroup) => {
     try {
       const dirToCam = camera.position.clone().sub(basePos).setY(0).normalize()
       basePos.add(dirToCam.multiplyScalar(1.0))
-    } catch (e) { }
+    } catch (e) {}
   }
 
   const aspect = lw / lh
@@ -735,14 +837,19 @@ const getBarLabelPosition = (cityCenter, barHeight, cityName) => {
 
   direction.normalize()
   const preferLeft = direction.x >= 0
-  const side = centralNames.has(cityName) ? (preferLeft ? 'left' : 'right') : direction.x > 0.18 ? 'right' : 'left'
-  const laneSeed = Array.from(cityName).reduce(
-    (sum, char) => sum + char.charCodeAt(0),
-    0,
-  ) % 3
+  const side = centralNames.has(cityName)
+    ? preferLeft
+      ? 'left'
+      : 'right'
+    : direction.x > 0.18
+      ? 'right'
+      : 'left'
+  const laneSeed =
+    Array.from(cityName).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 3
   const laneOffset = laneSeed - 1
   const horizontalOffset = side === 'left' ? -0.88 : 0.88
-  const verticalLift = 0.6 + laneSeed * 0.16 + (centralNames.has(cityName) ? 0.08 : 0)
+  const verticalLift =
+    0.6 + laneSeed * 0.16 + (centralNames.has(cityName) ? 0.08 : 0)
   const zOffset = laneOffset * 0.22 + direction.y * 0.18
 
   return {
@@ -973,12 +1080,15 @@ const createGlowBar = (cityCenter, cityName, barHeight, cityData) => {
     depthWrite: false,
   })
   const topRingMesh = new THREE.Mesh(topRingGeo, topRingMat)
-  topRingMesh.position.set(cityCenter.x, cityCenter.y + height + 0.03, cityCenter.z)
+  topRingMesh.position.set(
+    cityCenter.x,
+    cityCenter.y + height + 0.03,
+    cityCenter.z,
+  )
   mapGroup.add(topRingMesh)
 
   const labelLayout = getBarLabelPosition(cityCenter, height, cityName)
   createBarValueLabel(cityName, labelLayout, cityData, mapGroup)
-
 
   // 保存市中心以便生成飞线（深拷贝位置）
   cityCenters.push({ name: cityName, position: cityCenter.clone() })
@@ -1751,7 +1861,7 @@ const initScence = () => {
           label.sprite.quaternion.copy(camera.quaternion)
         }
       })
-    } catch (e) { }
+    } catch (e) {}
 
     render.render(scene, camera)
   }
@@ -1816,5 +1926,3 @@ onMounted(() => {
   }
 }
 </style>
-
-
