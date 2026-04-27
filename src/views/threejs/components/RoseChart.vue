@@ -58,7 +58,7 @@ const getChartOptions = (width: number, height: number) => {
         name: '接种单位',
         type: 'pie',
         radius: [radiusInner, radiusOuter],
-        center: ['50%', '52%'],
+        center: ['50%', '55%'],
         roseType: 'radius',
         itemStyle: {
           borderRadius: 3,
@@ -152,25 +152,27 @@ export default { name: 'RoseChart' }
 <style scoped lang="scss">
 .rose-chart-container {
   position: absolute;
-  width: clamp(350px, 20vw, 450px);
-  height: clamp(320px, 20vh, 450px);
-  top: 3%;
-  left: 20px;
+  width: 20vw;
+  min-width: 280px;
+  max-width: 380px;
+  height: 35vh;
+  min-height: 220px;
+  max-height: 320px;
+  top: 16vh;
+  left: 1vw;
   background: linear-gradient(
     145deg,
     rgba(8, 18, 38, 0.9),
     rgba(15, 35, 60, 0.8)
   );
   border-radius: 4px;
-  padding: 12px;
+  padding: 0.7rem;
   z-index: 100;
   display: flex;
   flex-direction: column;
-  // 科技感边框
   border: 1px solid transparent;
   background-clip: padding-box;
-  box-shadow:
-    0 0 20px rgba(79, 195, 247, 0.08),
+  box-shadow: 0 0 20px rgba(79, 195, 247, 0.08),
     inset 0 0 30px rgba(79, 195, 247, 0.03);
 
   // 渐变边框效果
@@ -188,12 +190,9 @@ export default { name: 'RoseChart' }
       rgba(79, 195, 247, 0.1) 70%,
       rgba(79, 195, 247, 0.4) 100%
     );
-    -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
+    -webkit-mask: linear-gradient(#fff 0 0) content-box,
       linear-gradient(#fff 0 0);
-    mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
@@ -205,18 +204,17 @@ export default { name: 'RoseChart' }
     position: absolute;
     top: -1px;
     left: -1px;
-    width: 20px;
-    height: 20px;
+    width: 1.2rem;
+    height: 1.2rem;
     border-top: 2px solid #4fc3f7;
     border-left: 2px solid #4fc3f7;
     border-radius: 4px 0 0 0;
   }
 
-  // 角落装饰容器
   .corner {
     position: absolute;
-    width: 20px;
-    height: 20px;
+    width: 1.2rem;
+    height: 1.2rem;
     pointer-events: none;
 
     &.tr {
@@ -247,11 +245,10 @@ export default { name: 'RoseChart' }
   .chart-title {
     flex-shrink: 0;
     text-align: center;
-    padding-bottom: 8px;
-    margin-bottom: 8px;
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.4rem;
     position: relative;
 
-    // 标题下方的科技线条
     &::after {
       content: '';
       position: absolute;
@@ -269,10 +266,10 @@ export default { name: 'RoseChart' }
     }
 
     span {
-      font-size: 14px;
+      font-size: clamp(12px, 0.85vw, 15px);
       color: #e0f7fa;
       font-weight: 500;
-      letter-spacing: 2px;
+      letter-spacing: 0.1rem;
       text-shadow: 0 0 10px rgba(79, 195, 247, 0.3);
     }
   }
@@ -284,43 +281,4 @@ export default { name: 'RoseChart' }
     overflow: hidden;
   }
 }
-
-// // 移动端
-// @media (max-width: 768px) {
-//   .rose-chart-container {
-//     width: 85vw;
-//     max-width: 280px;
-//     height: 280px;
-//     left: 50%;
-//     transform: translateX(-50%);
-
-//     .chart-title span {
-//       font-size: 12px;
-//     }
-//   }
-// }
-
-// // 平板/小屏
-// @media (min-width: 769px) and (max-width: 1200px) {
-//   .rose-chart-container {
-//     width: clamp(260px, 22vw, 320px);
-//     height: clamp(300px, 22vh, 360px);
-
-//     .chart-title span {
-//       font-size: 13px;
-//     }
-//   }
-// }
-
-// // 大屏
-// @media (min-width: 1600px) {
-//   .rose-chart-container {
-//     width: clamp(350px, 18vw, 420px);
-//     height: clamp(340px, 18vh, 450px);
-
-//     .chart-title span {
-//       font-size: 15px;
-//     }
-//   }
-// }
 </style>

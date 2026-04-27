@@ -1,28 +1,20 @@
-<template>
+﻿<template>
   <div class="container" ref="container">
+    <!-- 标题栏 -->
+    <HeaderBar />
+    <!-- 实时数字卡片 -->
+    <StatCard title="接种单位总数" :value="1102" unit="家" position="left" />
+    <StatCard title="平均完成率" :value="92.34" unit="%" position="right" :decimals="2" />
     <div class="mapWeb" ref="mapWeb">
       <!-- ECharts 玫瑰图组件 -->
       <RoseChart />
       <!-- ECharts 柱状图组件 -->
       <BarChart />
-      <!-- <div class="returnBack">
-        <el-button>退出</el-button>
-      </div> -->
-      <div class="addContent">
-        <span>增加3D特效</span>
-        <el-button
-          :class="flyEffectActive ? 'activeButton' : ''"
-          @click="addEffect"
-        >
-          飞线特效
-        </el-button>
-        <el-button
-          :class="particleEffect ? 'activeButton' : ''"
-          @click="addParticle"
-        >
-          粒子特效
-        </el-button>
-      </div>
+      <!-- 控制面板 -->
+      <ControlPanel :flyEffectActive="flyEffectActive" :particleEffect="particleEffect" @toggleFlyEffect="addEffect" @toggleParticleEffect="addParticle" />
+      <WarningTable :rows="warningTableData" :active-city="activeCity" />
+      <!-- 趋势折线图 -->
+      <TrendChart />
     </div>
   </div>
 </template>
@@ -49,6 +41,12 @@ import borderTwo from '@/assets/images/borderTwo.png'
 import RoseChart from './components/RoseChart.vue'
 // 导入 ECharts 柱状图组件
 import BarChart from './components/BarChart.vue'
+// 导入新增组件
+import HeaderBar from './components/HeaderBar.vue'
+import StatCard from './components/StatCard.vue'
+import ControlPanel from './components/ControlPanel.vue'
+import TrendChart from './components/TrendChart.vue'
+import WarningTable from './components/WarningTable.vue'
 // 导入新的JSON数据文件
 import areaLevelData from './areaLevel.json'
 import mapData from './mapData.json'
@@ -71,6 +69,65 @@ let flyLineGroup = null
 let flyLines = [] // { curve, line, comet, speed, progress }
 let cityCenters = [] // 存储所有市中心位置 { name, position: Vector3 }
 const flyEffectActive = ref(false)
+const activeCity = ref('全省')
+const warningTableData = [
+  { city: '南京市', unit: '鼓楼区接种中心', rate: 84.3, delta: -2.4, statusText: '预警', statusClass: 'warning' },
+  { city: '苏州市', unit: '工业园区接种门诊', rate: 86.1, delta: -1.7, statusText: '预警', statusClass: 'warning' },
+  { city: '无锡市', unit: '梁溪区妇幼保健院', rate: 88.5, delta: -0.9, statusText: '待跟进', statusClass: 'follow' },
+  { city: '常州市', unit: '新北区公共卫生中心', rate: 90.8, delta: 0.6, statusText: '待跟进', statusClass: 'follow' },
+  { city: '南通市', unit: '崇川区社区卫生中心', rate: 92.4, delta: 1.2, statusText: '正常', statusClass: 'normal' },
+  { city: '徐州市', unit: '云龙区疾控接种点', rate: 83.6, delta: -3.1, statusText: '预警', statusClass: 'warning' },
+  { city: '盐城市', unit: '亭湖区预防接种门诊', rate: 87.3, delta: -1.1, statusText: '待跟进', statusClass: 'follow' },
+  { city: '扬州市', unit: '广陵区接种服务站', rate: 91.6, delta: 0.8, statusText: '正常', statusClass: 'normal' },
+  { city: '泰州市', unit: '海陵区疾控中心', rate: 89.1, delta: -0.4, statusText: '待跟进', statusClass: 'follow' },
+  { city: '宿迁市', unit: '宿城区接种门诊', rate: 85.2, delta: -2.2, statusText: '预警', statusClass: 'warning' },
+  { city: '镇江市', unit: '京口区社区卫生院', rate: 90.2, delta: 0.3, statusText: '待跟进', statusClass: 'follow' },
+  { city: '连云港市', unit: '海州区接种中心', rate: 82.9, delta: -2.8, statusText: '预警', statusClass: 'warning' },
+  { city: '淮安市', unit: '淮阴区接种中心', rate: 86.5, delta: -0.5, statusText: '待跟进', statusClass: 'follow' }
+]
+
+const cityVaccinationData = [
+  { name: '南京市', total: 186, completed: 178, rate: 95.7 },
+  { name: '苏州市', total: 152, completed: 142, rate: 93.4 },
+  { name: '无锡市', total: 128, completed: 118, rate: 92.2 },
+  { name: '常州市', total: 95, completed: 88, rate: 92.6 },
+  { name: '南通市', total: 88, completed: 85, rate: 96.6 },
+  { name: '徐州市', total: 76, completed: 68, rate: 89.5 },
+  { name: '扬州市', total: 65, completed: 62, rate: 95.4 },
+  { name: '盐城市', total: 58, completed: 52, rate: 89.7 },
+  { name: '泰州市', total: 52, completed: 48, rate: 92.3 },
+  { name: '镇江市', total: 45, completed: 44, rate: 97.8 },
+  { name: '淮安市', total: 42, completed: 38, rate: 90.5 },
+  { name: '连云港市', total: 38, completed: 32, rate: 84.2 },
+  { name: '宿迁市', total: 32, completed: 28, rate: 87.5 },
+]
+
+const cityVaccinationMap = new Map(
+  cityVaccinationData.map((item) => [item.name, item]),
+)
+
+const totalVaccinationUnits = cityVaccinationData.reduce(
+  (sum, item) => sum + item.total,
+  0,
+)
+
+const getSafePixelRatio = () => {
+  if (typeof window === 'undefined') return 1
+  return Math.min(window.devicePixelRatio || 1, 2)
+}
+
+const enhanceTextTexture = (texture) => {
+  texture.minFilter = THREE.LinearFilter
+  texture.magFilter = THREE.LinearFilter
+  texture.generateMipmaps = false
+  if ('colorSpace' in texture) {
+    texture.colorSpace = THREE.SRGBColorSpace
+  }
+  if (render?.capabilities?.getMaxAnisotropy) {
+    texture.anisotropy = Math.min(8, render.capabilities.getMaxAnisotropy())
+  }
+  texture.needsUpdate = true
+}
 
 const createVisualizationMap = () => {
   // 创建地板
@@ -333,7 +390,7 @@ const createParticleSystem = (scene, options = {}) => {
       const t = Math.min(
         1,
         (positions[ix + 1] - particleArea.yMin) /
-          (particleArea.yMax - particleArea.yMin),
+        (particleArea.yMax - particleArea.yMin),
       )
       const mixed = baseColor.clone().lerp(fadeColor, t)
       colors[ix] = mixed.r
@@ -380,7 +437,7 @@ const createProvinceLabel = (name, position, mapGroup) => {
   const ctx = canvas.getContext('2d')
 
   const isJiangsu = name === '江苏省'
-  const DPR = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+  const DPR = getSafePixelRatio()
   // 逻辑画布尺寸（CSS像素）
   const lw = isJiangsu ? 360 : 256
   const lh = isJiangsu ? 100 : 64
@@ -409,6 +466,9 @@ const createProvinceLabel = (name, position, mapGroup) => {
       ctx.font = `bold ${isHover ? 30 : 28}px Microsoft Yahei`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
+      ctx.lineWidth = 2
+      ctx.strokeStyle = 'rgba(73, 208, 255, 0.35)'
+      ctx.strokeText(name, lw / 2, lh / 2)
       ctx.fillStyle = '#ffffff'
       ctx.fillText(name, lw / 2, lh / 2)
       return
@@ -422,6 +482,9 @@ const createProvinceLabel = (name, position, mapGroup) => {
     const centerX = lw / 2
     // 主文字绘制在画布上半部分（使用逻辑像素）
     const mainY = lh * 0.35
+    ctx.lineWidth = 2.5
+    ctx.strokeStyle = 'rgba(73, 208, 255, 0.28)'
+    ctx.strokeText(name, centerX, mainY)
     ctx.fillStyle = '#ffffff'
     ctx.fillText(name, centerX, mainY)
 
@@ -433,11 +496,8 @@ const createProvinceLabel = (name, position, mapGroup) => {
 
   // 2. 创建纹理和精灵材质
   const texture = new THREE.CanvasTexture(canvas)
-  // 使用线性过滤并关闭mipmap（画布纹理通常不需要mipmap）
-  texture.minFilter = THREE.LinearFilter
-  texture.magFilter = THREE.LinearFilter
-  texture.generateMipmaps = false
-  texture.needsUpdate = true
+  // 使用线性过滤并关闭 mipmap（画布纹理通常不需要 mipmap）
+  enhanceTextTexture(texture)
   const material = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
@@ -455,7 +515,7 @@ const createProvinceLabel = (name, position, mapGroup) => {
     try {
       const dirToCam = camera.position.clone().sub(basePos).setY(0).normalize()
       basePos.add(dirToCam.multiplyScalar(1.0))
-    } catch (e) {}
+    } catch (e) { }
   }
 
   const aspect = lw / lh
@@ -476,7 +536,7 @@ const createProvinceLabel = (name, position, mapGroup) => {
     }
   }
 
-  // ===== 江苏：使用两块平面（主 + 倒影） =====
+  // ===== 江苏：使用两块平面（主字 + 倒影） =====
   const baseWorldHeight = 1.8
   const hoverWorldHeight = 2.0
   const planeWidth = baseWorldHeight * aspect
@@ -524,10 +584,7 @@ const createProvinceLabel = (name, position, mapGroup) => {
   rctx.fillRect(0, mainY, lw, lh - mainY)
 
   const reflectTex = new THREE.CanvasTexture(reflectCanvas)
-  reflectTex.minFilter = THREE.LinearFilter
-  reflectTex.magFilter = THREE.LinearFilter
-  reflectTex.generateMipmaps = false
-  reflectTex.needsUpdate = true
+  enhanceTextTexture(reflectTex)
 
   const reflectMat = new THREE.MeshBasicMaterial({
     map: reflectTex,
@@ -594,45 +651,53 @@ const createCityLabel = (name, position, mapGroup) => {
   // 1. 创建文字画布纹理
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
-  canvas.width = 160
-  canvas.height = 80
+  const DPR = getSafePixelRatio()
+  const lw = 192
+  const lh = 80
+  canvas.width = Math.floor(lw * DPR)
+  canvas.height = Math.floor(lh * DPR)
+  canvas.style.width = `${lw}px`
+  canvas.style.height = `${lh}px`
+  ctx.scale(DPR, DPR)
 
   // 绘制文字
   const drawText = (isHover) => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    // // 背景（半透明圆角）
-    // ctx.fillStyle = 'rgba(13, 22, 29, 0.1)'
-    // ctx.roundRect(1, 1, canvas.width - 10, canvas.height - 10, 5)
-    // ctx.fill()
+    ctx.clearRect(0, 0, lw, lh)
 
     // 设置文字样式 - 带发光效果
-    ctx.font = `bold ${isHover ? 30 : 30}px Arial`
+    ctx.font = `bold ${isHover ? 30 : 28}px Microsoft YaHei`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
     // 创建文字发光效果
-    // ctx.shadowColor = '#69e2f2'  // 发光颜色(蓝绿色)
+    // ctx.shadowColor = '#69e2f2'  // 发光颜色（蓝绿色）
     // ctx.shadowBlur = 1 // 发光模糊度
     ctx.fillStyle = '#ffffff' // 文字颜色(白色)
 
     // 绘制文字
-    ctx.fillText(name, canvas.width / 2, canvas.height / 2)
+    ctx.lineWidth = 2
+    ctx.strokeStyle = 'rgba(73, 208, 255, 0.3)'
+    ctx.strokeText(name, lw / 2, lh / 2)
+    ctx.fillText(name, lw / 2, lh / 2)
   }
 
   // 初始绘制
   drawText(false)
   // 创建纹理和材质
   const texture = new THREE.CanvasTexture(canvas)
+  enhanceTextTexture(texture)
   const material = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
     depthWrite: false,
+    depthTest: false,
   })
 
   // 创建精灵对象
   const sprite = new THREE.Sprite(material)
   sprite.position.set(position.x, position.y, position.z)
-  sprite.scale.set(2, 0.5, 1)
+  sprite.renderOrder = 9999
+  sprite.scale.set(2.2, 0.65, 1)
   mapGroup.add(sprite)
 
   // 返回更新方法
@@ -646,8 +711,150 @@ const createCityLabel = (name, position, mapGroup) => {
 }
 
 // ===== 替换原柱状图代码：创建“发光科技柱” =====
-const createGlowBar = (cityCenter, cityName, barHeight) => {
-  const barRadius = 0.1 // 柱体半径（对应CylinderGeometry的顶部/底部半径）
+const getBarLabelPosition = (cityCenter, barHeight, cityName) => {
+  const mapCenter = new THREE.Vector2(1.8, 0.15)
+  const cityPoint = new THREE.Vector2(cityCenter.x, cityCenter.z)
+  const direction = cityPoint.clone().sub(mapCenter)
+  const centralNames = new Set([
+    '无锡市',
+    '常州市',
+    '镇江市',
+    '扬州市',
+    '泰州市',
+    '淮安市',
+  ])
+
+  if (direction.lengthSq() < 0.08) {
+    const seed = Array.from(cityName).reduce(
+      (sum, char) => sum + char.charCodeAt(0),
+      0,
+    )
+    const angle = ((seed % 360) * Math.PI) / 180
+    direction.set(Math.cos(angle), Math.sin(angle))
+  }
+
+  direction.normalize()
+  const preferLeft = direction.x >= 0
+  const side = centralNames.has(cityName) ? (preferLeft ? 'left' : 'right') : direction.x > 0.18 ? 'right' : 'left'
+  const laneSeed = Array.from(cityName).reduce(
+    (sum, char) => sum + char.charCodeAt(0),
+    0,
+  ) % 3
+  const laneOffset = laneSeed - 1
+  const horizontalOffset = side === 'left' ? -0.88 : 0.88
+  const verticalLift = 0.6 + laneSeed * 0.16 + (centralNames.has(cityName) ? 0.08 : 0)
+  const zOffset = laneOffset * 0.22 + direction.y * 0.18
+
+  return {
+    side,
+    lane: laneSeed,
+    position: new THREE.Vector3(
+      cityCenter.x + horizontalOffset,
+      cityCenter.y + barHeight + verticalLift,
+      cityCenter.z + zOffset,
+    ),
+  }
+}
+
+const createBarValueLabel = (cityName, layout, cityData, mapGroup) => {
+  const { position, side } = layout
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  const DPR = getSafePixelRatio()
+  const width = 224
+  const height = 116
+  canvas.width = Math.floor(width * DPR)
+  canvas.height = Math.floor(height * DPR)
+  canvas.style.width = `${width}px`
+  canvas.style.height = `${height}px`
+  ctx.scale(DPR, DPR)
+
+  const share = totalVaccinationUnits
+    ? ((cityData.total / totalVaccinationUnits) * 100).toFixed(1)
+    : '0.0'
+
+  ctx.clearRect(0, 0, width, height)
+
+  const isLeft = side === 'left'
+  const panelX = isLeft ? 62 : 18
+  const panelY = 4
+  const panelWidth = 136
+  const panelHeight = 78
+  const anchorX = isLeft ? width - 14 : 14
+  const anchorY = 102
+  const panelJoinX = isLeft ? panelX + panelWidth : panelX
+
+  ctx.beginPath()
+  ctx.moveTo(anchorX, anchorY)
+  ctx.lineTo(panelJoinX, panelY + panelHeight * 0.6)
+  ctx.strokeStyle = 'rgba(101, 226, 242, 0.75)'
+  ctx.lineWidth = 1.8
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(anchorX, anchorY, 3.5, 0, Math.PI * 2)
+  ctx.fillStyle = '#6cecff'
+  ctx.fill()
+
+  ctx.fillStyle = 'rgba(8, 18, 38, 0.82)'
+  ctx.strokeStyle = 'rgba(89, 220, 255, 0.68)'
+  ctx.lineWidth = 1.5
+  if (ctx.roundRect) {
+    ctx.beginPath()
+    ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 10)
+    ctx.fill()
+    ctx.stroke()
+  } else {
+    ctx.fillRect(panelX, panelY, panelWidth, panelHeight)
+    ctx.strokeRect(panelX, panelY, panelWidth, panelHeight)
+  }
+
+  const lineGradient = ctx.createLinearGradient(
+    panelX,
+    panelY + 28,
+    panelX + panelWidth,
+    panelY + 28,
+  )
+  lineGradient.addColorStop(0, 'rgba(79, 195, 247, 0)')
+  lineGradient.addColorStop(0.5, 'rgba(79, 195, 247, 0.65)')
+  lineGradient.addColorStop(1, 'rgba(79, 195, 247, 0)')
+  ctx.fillStyle = lineGradient
+  ctx.fillRect(panelX + 10, panelY + 28, panelWidth - 20, 1)
+
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.font = 'bold 18px Microsoft YaHei'
+  ctx.fillStyle = '#f2fcff'
+  ctx.fillText(cityName, panelX + 12, panelY + 16)
+
+  ctx.font = 'bold 24px Microsoft YaHei'
+  ctx.fillStyle = '#6cecff'
+  ctx.fillText(`${cityData.total}家`, panelX + 12, panelY + 43)
+
+  ctx.font = '14px Microsoft YaHei'
+  ctx.fillStyle = '#95dfff'
+  ctx.fillText(`占全省 ${share}%`, panelX + 12, panelY + 64)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  enhanceTextTexture(texture)
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+  })
+
+  const sprite = new THREE.Sprite(material)
+  sprite.position.copy(position)
+  sprite.scale.set(2.2, 1.14, 1)
+  sprite.renderOrder = 10000
+  mapGroup.add(sprite)
+
+  return { sprite, texture }
+}
+
+const createGlowBar = (cityCenter, cityName, barHeight, cityData) => {
+  const barRadius = 0.1 // 柱体半径（对应 CylinderGeometry 的顶部/底部半径）
   const height = barHeight
 
   // 1. 基础柱体（半透明渐变+自发光）
@@ -657,7 +864,7 @@ const createGlowBar = (cityCenter, cityName, barHeight) => {
     height,
     15,
   )
-  // 用MeshBasicMaterial+顶点颜色实现渐变（底部暗、顶部亮）
+  // 用 MeshBasicMaterial + 顶点颜色实现渐变（底部暗、顶部亮）
   const colors = new Float32Array(cylinderGeo.attributes.position.count * 3)
   for (let i = 0; i < cylinderGeo.attributes.position.count; i++) {
     // 根据y坐标（柱体高度）设置颜色渐变
@@ -717,7 +924,7 @@ const createGlowBar = (cityCenter, cityName, barHeight) => {
     `,
     transparent: true,
     blending: THREE.AdditiveBlending,
-    depthWrite: false, // 不写入深度，避免遮挡基础柱体
+    depthWrite: false, // 不写入深度度，避免遮挡基础柱体
   })
   const glowMesh = new THREE.Mesh(glowGeo, glowMat)
   glowMesh.position.set(cityCenter.x, cityCenter.y + height / 2, cityCenter.z)
@@ -756,21 +963,29 @@ const createGlowBar = (cityCenter, cityName, barHeight) => {
   // topRingMesh.position.set(cityCenter.x, cityCenter.y + height + 0.05, cityCenter.z); // 柱体顶部上方
   // mapGroup.add(topRingMesh);
 
-  const textLabel = createCityLabel(
-    cityName, // 显示市名，也可替换为数值（比如barHeight.toFixed(0)）
-    { x: cityCenter.x + 0.2, y: cityCenter.y + height + 1, z: cityCenter.z }, // 文字在柱体顶部上方0.2处
-    mapGroup,
-  )
-  // 调整文字标签样式，匹配科技感
-  textLabel.sprite.scale.set(1, 0.5, 1) // 缩小标签，更精致
-  textLabel.updateHover(true)
+  const topRingGeo = new THREE.RingGeometry(barRadius, barRadius + 0.08, 24, 1)
+  topRingGeo.rotateX(-Math.PI / 2)
+  const topRingMat = new THREE.MeshBasicMaterial({
+    color: 0xb2feff,
+    transparent: true,
+    opacity: 0.85,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  })
+  const topRingMesh = new THREE.Mesh(topRingGeo, topRingMat)
+  topRingMesh.position.set(cityCenter.x, cityCenter.y + height + 0.03, cityCenter.z)
+  mapGroup.add(topRingMesh)
+
+  const labelLayout = getBarLabelPosition(cityCenter, height, cityName)
+  createBarValueLabel(cityName, labelLayout, cityData, mapGroup)
+
 
   // 保存市中心以便生成飞线（深拷贝位置）
   cityCenters.push({ name: cityName, position: cityCenter.clone() })
 
-  return { cylinderMesh, glowMesh }
+  return { cylinderMesh, glowMesh, topRingMesh }
 }
-// 计算GeoJSON特征的几何中心（兼容MultiPolygon/Polygon）
+// 计算 GeoJSON 特征的几何中心（兼容 MultiPolygon/Polygon）
 const getFeatureCenter = (feature, projection) => {
   if (!feature?.geometry) return new THREE.Vector3(0, 0, 0)
 
@@ -808,7 +1023,7 @@ const createMap = () => {
         `${import.meta.env.BASE_URL}data/100000_full.json`,
       )
       const chinaGeoJson = await res.json()
-      // 江苏市级数据（13市边界）
+      // 江苏市级数据（13 市边界）
       // const resJiangsuCity = await fetch(
       //   'https://geo.datav.aliyun.com/areas_v3/bound/320000_full.json',
       // )
@@ -818,19 +1033,19 @@ const createMap = () => {
       const jiangsuCityGeoJson = await resJiangsuCity.json()
       if (!chinaGeoJson?.features || !jiangsuCityGeoJson?.features) return
 
-      // 2. 清除旧地图+创建地图组
+      // 2. 清除旧地图，创建地图组
       const oldGroup = scene.getObjectByName('provinceGroup')
       if (oldGroup) scene.remove(oldGroup)
 
       mapGroup = new THREE.Group()
       mapGroup.name = 'provinceGroup'
-      mapGroup.position.set(0, 0, 0) // 悬浮在地面上方
+      mapGroup.position.set(0, 0, 0) // 悬浮在地面上
       scene.add(mapGroup)
 
       // 重置 cityCenters，避免重复记录（例如二次渲染时）
       cityCenters.length = 0
 
-      // 3. 关键：D3投影配置（完整中国+江苏居中）
+      // 3. 关键：D3 投影配置（完整中国，江苏居中）
       const jiangsuCenter = [119.84, 32.98] // 江苏地理中心
       const projection = d3
         .geoMercator()
@@ -838,7 +1053,7 @@ const createMap = () => {
         .scale(130) // 缩放
         .translate([2, 0]) // 平移到原点
 
-      // 定义样式常量（科技蓝明亮风）
+      // 定义样式常量（科技蓝明亮风格）
       const STYLE = {
         // 其他省份样式（基础暗蓝）
         normal: {
@@ -847,10 +1062,10 @@ const createMap = () => {
           borderColor: 0x2d4c78,
           opacity: 1,
         },
-        // 江苏省突出样式（科技蓝+加高）
+        // 江苏省突出样式（科技感 + 加高）
         jiangsu: {
           color: 0x68b6fe,
-          // highlightColor: 0x47E5FF,// 高光色
+          // highlightColor: 0x47E5FF, // 高光色
           height: 0.5,
           borderColor: 0xffffff,
           opacity: 1,
@@ -877,17 +1092,17 @@ const createMap = () => {
         // 创建文字标签
         const label = createProvinceLabel(name, center, mapGroup)
         provinceLabels.set(name, label)
-        // 提取GeoJSON中的经纬度坐标（多面/单面对象兼容）
+        // 提取 GeoJSON 中的经纬度坐标（多面/单面对象兼容）
         const coordinates =
           feature.geometry.type === 'MultiPolygon'
             ? feature.geometry.coordinates.flat(1)
             : feature.geometry.coordinates
 
         coordinates.forEach((ring) => {
-          // 经纬度转Three.js坐标（用D3投影）
+          // 经纬度转 Three.js 坐标（用 D3 投影）
           const points = ring.map(([lng, lat]) => {
             const [x, y] = projection([lng, lat])
-            return new THREE.Vector2(x, y) // 转2D Vector
+            return new THREE.Vector2(x, y) // 2D Vector
           })
 
           if (points.length < 3) return
@@ -912,12 +1127,12 @@ const createMap = () => {
           // 旋转适配坐标系（保持平躺）
           geom.rotateX(Math.PI / 2)
 
-          // 材质配置（科技蓝明亮风）
+          // 材质配置（科技蓝明亮风格）
           let material
           if (isJiangsu) {
             material = new THREE.MeshLambertMaterial({
               color: STYLE.jiangsu.color,
-              // specular: STYLE.jiangsu.highlightColor, // 高光色
+              // specular: STYLE.jiangsu.highlightColor, // 高光
               // shininess: 80,                          // 光泽度（明亮）
               // side: THREE.DoubleSide,
               opacity: 0.8,
@@ -931,7 +1146,7 @@ const createMap = () => {
               transparent: false,
             })
           }
-          // 创建Mesh并设置位置
+          // 创建 Mesh 并设置位置
           const mesh = new THREE.Mesh(geom, material)
           // 江苏的高度已由ExtrudeGeometry的depth实现，无需额外y偏移
           // 其他省份保留基础y偏移
@@ -958,12 +1173,14 @@ const createMap = () => {
         })
       })
 
-      // 6.渲染江苏13市边界
+      // 6. 渲染江苏 13 市边界
       jiangsuCityGeoJson.features.forEach((cityFeature) => {
         if (!cityFeature?.geometry) return
         const cityName = cityFeature.properties?.name || '未知城市'
-        const barHeight = Math.random() * 3 + 1 //不同城市设置随机高度
-        // 修复1：统一坐标结构（不管MultiPolygon/Polygon）
+        const cityData = cityVaccinationMap.get(cityName)
+        if (!cityData) return
+        const barHeight = 0.8 + (cityData.total / 186) * 3.4
+        // 修复1：统一坐标结构（不管 MultiPolygon/Polygon）
         const polygonList =
           cityFeature.geometry.type === 'MultiPolygon'
             ? cityFeature.geometry.coordinates
@@ -1018,7 +1235,7 @@ const createMap = () => {
           if (!cityMeshes.has(cityName)) cityMeshes.set(cityName, [])
           cityMeshes.get(cityName).push(cityMesh)
 
-          createGlowBar(cityCenter, cityName, barHeight)
+          createGlowBar(cityCenter, cityName, barHeight, cityData)
           const lineGeom = new THREE.BufferGeometry().setFromPoints(linePoints)
           const line = new THREE.LineSegments(
             lineGeom,
@@ -1156,6 +1373,7 @@ function highlightCity(cityName) {
 
   if (!cityName) {
     highlightedCity = null
+    activeCity.value = '全省'
     return
   }
 
@@ -1169,6 +1387,7 @@ function highlightCity(cityName) {
       mesh.material.opacity = 1
     })
     highlightedCity = cityName
+    activeCity.value = cityName
   }
 }
 const initScence = () => {
@@ -1188,12 +1407,22 @@ const initScence = () => {
   scene.add(camera)
   // 3.创建渲染器
   render = new THREE.WebGLRenderer({ antialias: true })
+  render.setPixelRatio(getSafePixelRatio())
   render.setSize(window.innerWidth, window.innerHeight)
   mapWeb.value.appendChild(render.domElement)
 
   scene.fog = new THREE.Fog(0x192b41, 10, 100)
   render.setClearColor(scene.background)
   window.scene = scene
+
+  const handleResize = () => {
+    const width = window.innerWidth
+    const height = window.innerHeight
+    camera.aspect = width / height
+    camera.updateProjectionMatrix()
+    render.setPixelRatio(getSafePixelRatio())
+    render.setSize(width, height)
+  }
   //添加灯光 AmbientLight, DirectionalLight
   const light = new THREE.AmbientLight(0xfaaaaa)
   scene.add(light)
@@ -1271,6 +1500,7 @@ const initScence = () => {
   window.addEventListener('wheel', onUserInteraction, { passive: true })
   window.addEventListener('click', onUserInteraction)
   window.addEventListener('dblclick', switchToFarView)
+  window.addEventListener('resize', handleResize)
 
   //   中心位置添加图片贴图
   // 5.中心位置加载图片贴图 - 修复后的代码
@@ -1333,41 +1563,41 @@ const initScence = () => {
       })
     },
   )
-  // 创建GUI，并挂载到threejs场景
-  try {
-    gui = new GUI()
-    // AmbientLight参数 颜色 强度
-    const lightFolder = gui.addFolder('AmbientLight环境光')
-    const lightParams = {
-      color: 0xffffff,
-      intensity: 1,
-    }
-    lightFolder
-      .add(lightParams, 'color', 0x000000, 0xffffff)
-      .onChange((value) => {
-        light.color.set(value)
-      })
-      .name('环境光颜色')
-    lightFolder.add(lightParams, 'intensity', 0, 1, 0.1).name('环境光强度')
+  // // 创建GUI，并挂载到threejs场景
+  // try {
+  //   gui = new GUI()
+  //   // AmbientLight参数 颜色 强度
+  //   const lightFolder = gui.addFolder('AmbientLight环境光')
+  //   const lightParams = {
+  //     color: 0xffffff,
+  //     intensity: 1,
+  //   }
+  //   lightFolder
+  //     .add(lightParams, 'color', 0x000000, 0xffffff)
+  //     .onChange((value) => {
+  //       light.color.set(value)
+  //     })
+  //     .name('环境光颜色')
+  //   lightFolder.add(lightParams, 'intensity', 0, 1, 0.1).name('环境光强度')
 
-    // 直射光
-    const dirLightFolder = gui.addFolder('DirectionalLight直射光')
-    const lightParams2 = {
-      color: 0xffffff,
-      intensity: 1,
-      x: 0,
-      y: 0,
-      z: 0,
-    }
-    dirLightFolder
-      .add(lightParams2, 'color', 0x000000, 0xffffff)
-      .onChange((value) => {
-        directionalLight.color.set(value)
-      })
-      .name('直射光颜色')
-    dirLightFolder.add(lightParams2, 'intensity', 0, 1, 0.1).name('直射光强度')
-    dirLightFolder.add(lightParams2, 'x', -10, 10, 1).name('直射光x轴位置')
-  } catch (e) {}
+  //   // 直射光
+  //   const dirLightFolder = gui.addFolder('DirectionalLight直射光')
+  //   const lightParams2 = {
+  //     color: 0xffffff,
+  //     intensity: 1,
+  //     x: 0,
+  //     y: 0,
+  //     z: 0,
+  //   }
+  //   dirLightFolder
+  //     .add(lightParams2, 'color', 0x000000, 0xffffff)
+  //     .onChange((value) => {
+  //       directionalLight.color.set(value)
+  //     })
+  //     .name('直射光颜色')
+  //   dirLightFolder.add(lightParams2, 'intensity', 0, 1, 0.1).name('直射光强度')
+  //   dirLightFolder.add(lightParams2, 'x', -10, 10, 1).name('直射光x轴位置')
+  // } catch (e) {}
 
   // const loadChinaMapData = async () => {
   //   try {
@@ -1391,7 +1621,7 @@ const initScence = () => {
   //   coordinates.forEach((polygon) => {
   //     const rings = Array.isArray(polygon[0][0]) ? polygon : [polygon];
   //     rings.forEach((ring) => {
-  //       // 1. 收集原始经纬度转换的坐标（x对应经度，z对应纬度，y为0）
+  //       // 1. 收集原始经纬度转换的坐标（x 对应经度，z 对应纬度，y 为 0）
   //       const flatPoints = [];
   //       ring.forEach((coord) => {
   //         const x = (coord[0] - 119) * 2.5;
@@ -1410,10 +1640,10 @@ const initScence = () => {
   //       fillMesh.position.y = 0.2;
   //       provinceGroup.add(fillMesh);
 
-  //       // 3. 线框：基于旋转后的平面坐标，仅在y方向抬高0.01（贴近填充面）
+  //       // 3. 线框：基于旋转后的平面坐标，仅在 y 方向抬高 0.01（贴近填充面）
   //       const borderPoints = flatPoints.map(p => {
-  //         // 旋转后，原z轴映射到视觉上的"y方向"，需转换为旋转后的平面坐标
-  //         return new THREE.Vector3(p.x, 0.2 + 0.01, -p.z); // -p.z抵消旋转带来的方向反转
+  //         // 旋转后，原 z 轴映射到视觉上的 "y 方向"，需转换为旋转后的平面坐标
+  //         return new THREE.Vector3(p.x, 0.2 + 0.01, -p.z); // -p.z 抵消旋转带来的方向反转
   //       });
   //       const borderLine = new THREE.LineLoop(
   //         new THREE.BufferGeometry().setFromPoints(borderPoints),
@@ -1431,7 +1661,7 @@ const initScence = () => {
   gridSystem = createdGridSystem
   createMap()
 
-  // ===== 新增：鼠标悬浮交互（使用外层的mapGroup和provinceLabels）=====
+  // ===== 新增：鼠标悬浮交互（使用外层的 mapGroup 和 provinceLabels）=====
   const raycaster = new THREE.Raycaster()
   const mouse = new THREE.Vector2()
   let hoveredProvince = null
@@ -1447,7 +1677,7 @@ const initScence = () => {
     // 更新射线
     raycaster.setFromCamera(mouse, camera)
 
-    // 检测地图组内的Mesh（过滤非Mesh对象，比如Line、Sprite）
+    // 检测地图组内的 Mesh（过滤非 Mesh 对象，比如 Line、Sprite）
     const meshList = mapGroup.children.filter((obj) => obj.isMesh)
     const intersects = raycaster.intersectObjects(meshList)
 
@@ -1490,6 +1720,7 @@ const initScence = () => {
     window.removeEventListener('wheel', onUserInteraction)
     window.removeEventListener('click', onUserInteraction)
     window.removeEventListener('dblclick', switchToFarView)
+    window.removeEventListener('resize', handleResize)
     window.removeEventListener('click', onMapClick)
 
     // 卸载时清理飞线资源
@@ -1520,7 +1751,7 @@ const initScence = () => {
           label.sprite.quaternion.copy(camera.quaternion)
         }
       })
-    } catch (e) {}
+    } catch (e) { }
 
     render.render(scene, camera)
   }
@@ -1585,3 +1816,5 @@ onMounted(() => {
   }
 }
 </style>
+
+

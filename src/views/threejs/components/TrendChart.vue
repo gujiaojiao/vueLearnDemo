@@ -1,11 +1,10 @@
 <template>
-  <div class="bar-chart-container">
-    <!-- 四角装饰 -->
+  <div class="trend-chart-container">
     <span class="corner tr"></span>
     <span class="corner bl"></span>
     <span class="corner br"></span>
     <div class="chart-title">
-      <span>各市考核完成率</span>
+      <span>接种单位数量趋势</span>
     </div>
     <div class="chart-wrapper" ref="chartRef"></div>
   </div>
@@ -18,48 +17,36 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 const chartRef = ref<HTMLElement>()
 let chartInstance: echarts.ECharts | null = null
 
-// Mock数据：江苏13市考核完成情况
-const mockData = [
-  { name: '南京市', total: 186, completed: 178, rate: 95.7 },
-  { name: '苏州市', total: 152, completed: 142, rate: 93.4 },
-  { name: '无锡市', total: 128, completed: 118, rate: 92.2 },
-  { name: '常州市', total: 95, completed: 88, rate: 92.6 },
-  { name: '南通市', total: 88, completed: 85, rate: 96.6 },
-  { name: '徐州市', total: 76, completed: 68, rate: 89.5 },
-  { name: '扬州市', total: 65, completed: 62, rate: 95.4 },
-  { name: '盐城市', total: 58, completed: 52, rate: 89.7 },
-  { name: '泰州市', total: 52, completed: 48, rate: 92.3 },
-  { name: '镇江市', total: 45, completed: 44, rate: 97.8 },
-  { name: '淮安市', total: 42, completed: 38, rate: 90.5 },
-  { name: '连云港市', total: 38, completed: 32, rate: 84.2 },
-  { name: '宿迁市', total: 32, completed: 28, rate: 87.5 },
-].sort((a, b) => b.rate - a.rate) // 按完成率降序排列
-
-// 根据完成率获取颜色
-const getRateColor = (rate: number) => {
-  if (rate >= 95) return '#4fc3f7' // 亮青色 - 优秀
-  if (rate >= 90) return '#29b6f6' // 蓝色 - 良好
-  if (rate >= 85) return '#0288d1' // 深蓝 - 合格
-  return '#01579b' // 暗蓝 - 待提升
-}
+// Mock数据：近12个月接种单位数量趋势
+const trendData = [
+  { month: '2025-05', count: 980, label: '5月' },
+  { month: '2025-06', count: 995, label: '6月' },
+  { month: '2025-07', count: 1010, label: '7月' },
+  { month: '2025-08', count: 1025, label: '8月' },
+  { month: '2025-09', count: 1038, label: '9月' },
+  { month: '2025-10', count: 1050, label: '10月' },
+  { month: '2025-11', count: 1062, label: '11月' },
+  { month: '2025-12', count: 1075, label: '12月' },
+  { month: '2026-01', count: 1085, label: '1月' },
+  { month: '2026-02', count: 1092, label: '2月' },
+  { month: '2026-03', count: 1098, label: '3月' },
+  { month: '2026-04', count: 1102, label: '4月' },
+]
 
 const getChartOptions = (width: number, height: number) => {
-  const baseFontSize = Math.max(10, Math.min(12, height / 32))
+  const baseFontSize = Math.max(10, Math.min(12, height / 25))
 
   return {
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
         const data = params[0]
-        const item = mockData.find((d) => d.name === data.name)
+        const item = trendData.find((d) => d.month === data.name)
         if (!item) return ''
         return `
-          <div style="padding: 4px 8px;">
-            <div style="font-weight: bold; margin-bottom: 4px;">${item.name}</div>
-            <div>接种单位: ${item.total} 家</div>
-            <div>已完成: ${item.completed} 家</div>
-            <div style="color: #4fc3f7;">完成率: ${item.rate}%</div>
+          <div style="padding: 6px 10px;">
+            <div style="font-weight: bold; color: #e0f7fa;">${item.label}</div>
+            <div style="color: #4fc3f7;">接种单位: ${data.value} 家</div>
           </div>
         `
       },
@@ -69,59 +56,75 @@ const getChartOptions = (width: number, height: number) => {
       textStyle: { color: '#fff', fontSize: baseFontSize },
     },
     grid: {
-      left: '3%',
-      right: '12%',
-      top: '3%',
-      bottom: '3%',
+      left: '8%',
+      right: '5%',
+      top: '15%',
+      bottom: '18%',
       containLabel: true,
     },
     xAxis: {
-      type: 'value',
-      max: 100,
-      axisLine: { show: false },
+      type: 'category',
+      data: trendData.map((d) => d.month),
+      axisLine: {
+        lineStyle: { color: 'rgba(79, 195, 247, 0.3)' },
+      },
       axisTick: { show: false },
-      axisLabel: { show: false },
-      splitLine: { show: false },
+      axisLabel: {
+        color: '#b0bec5',
+        fontSize: baseFontSize - 1,
+        formatter: (value: string) => {
+          const item = trendData.find((d) => d.month === value)
+          return item ? item.label : value
+        },
+        interval: 0,
+        rotate: 30,
+      },
     },
     yAxis: {
-      type: 'category',
-      data: mockData.map((d) => d.name),
+      type: 'value',
+      min: 950,
+      max: 1150,
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: {
         color: '#b0bec5',
-        fontSize: baseFontSize,
-        margin: 8,
+        fontSize: baseFontSize - 1,
       },
-      inverse: true, // 高完成率在上
+      splitLine: {
+        lineStyle: {
+          color: 'rgba(79, 195, 247, 0.1)',
+          type: 'dashed',
+        },
+      },
     },
     series: [
       {
-        name: '完成率',
-        type: 'bar',
-        barWidth: '50%',
-        data: mockData.map((d) => ({
-          value: d.rate,
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-              { offset: 0, color: 'rgba(79, 195, 247, 0.3)' },
-              { offset: 1, color: getRateColor(d.rate) },
-            ]),
-            borderRadius: [0, 2, 2, 0],
-          },
-        })),
-        label: {
-          show: true,
-          position: 'right',
-          formatter: '{c}%',
-          fontSize: baseFontSize,
-          color: '#e0f7fa',
-          distance: 6,
+        name: '接种单位',
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        data: trendData.map((d) => d.count),
+        lineStyle: {
+          color: '#4fc3f7',
+          width: 2,
+        },
+        itemStyle: {
+          color: '#4fc3f7',
+          borderColor: '#fff',
+          borderWidth: 1,
+        },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(79, 195, 247, 0.4)' },
+            { offset: 1, color: 'rgba(79, 195, 247, 0.05)' },
+          ]),
         },
         emphasis: {
+          focus: 'series',
           itemStyle: {
             shadowBlur: 10,
-            shadowColor: 'rgba(79, 195, 247, 0.4)',
+            shadowColor: 'rgba(79, 195, 247, 0.5)',
           },
         },
       },
@@ -167,20 +170,20 @@ onUnmounted(() => {
 </script>
 
 <script lang="ts">
-export default { name: 'BarChart' }
+export default { name: 'TrendChart' }
 </script>
 
 <style scoped lang="scss">
-.bar-chart-container {
+.trend-chart-container {
   position: absolute;
-  width: 20vw;
+  width: 18vw;
   min-width: 280px;
-  max-width: 380px;
-  height: 40vh;
-  min-height: 260px;
-  max-height: 360px;
-  top: 55vh;
-  left: 1vw;
+  max-width: 350px;
+  height: 24vh;
+  min-height: 210px;
+  max-height: 280px;
+  top: 21vh;
+  right: 1vw;
   background: linear-gradient(
     145deg,
     rgba(8, 18, 38, 0.9),
@@ -188,7 +191,7 @@ export default { name: 'BarChart' }
   );
   border-radius: 4px;
   padding: 0.7rem;
-  z-index: 100;
+  z-index: 150;
   display: flex;
   flex-direction: column;
   border: 1px solid transparent;
@@ -300,6 +303,12 @@ export default { name: 'BarChart' }
     width: 100%;
     min-height: 0;
     overflow: hidden;
+  }
+}
+
+@media (max-width: 1440px) {
+  .trend-chart-container {
+    width: 20vw;
   }
 }
 </style>
