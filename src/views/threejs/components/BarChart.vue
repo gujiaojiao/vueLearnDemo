@@ -5,7 +5,7 @@
     <span class="corner bl"></span>
     <span class="corner br"></span>
     <div class="chart-title">
-      <span>各市考核完成率</span>
+      <span>各市指标评价完成率</span>
     </div>
     <div class="chart-wrapper" ref="chartRef"></div>
   </div>
@@ -18,7 +18,7 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 const chartRef = ref<HTMLElement>()
 let chartInstance: echarts.ECharts | null = null
 
-// Mock数据：江苏13市考核完成情况
+// Mock数据：江苏13市指标评价完成情况
 const mockData = [
   { name: '南京市', total: 186, completed: 178, rate: 95.7 },
   { name: '苏州市', total: 152, completed: 142, rate: 93.4 },
@@ -57,9 +57,9 @@ const getChartOptions = (width: number, height: number) => {
         return `
           <div style="padding: 4px 8px;">
             <div style="font-weight: bold; margin-bottom: 4px;">${item.name}</div>
-            <div>接种单位: ${item.total} 家</div>
-            <div>已完成: ${item.completed} 家</div>
-            <div style="color: #4fc3f7;">完成率: ${item.rate}%</div>
+            <div>参评单位: ${item.total} 家</div>
+            <div>完成评价: ${item.completed} 家</div>
+            <div style="color: #4fc3f7;">评价完成率: ${item.rate}%</div>
           </div>
         `
       },
@@ -97,7 +97,7 @@ const getChartOptions = (width: number, height: number) => {
     },
     series: [
       {
-        name: '完成率',
+        name: '评价完成率',
         type: 'bar',
         barWidth: '50%',
         data: mockData.map((d) => ({

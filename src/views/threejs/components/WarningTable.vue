@@ -5,22 +5,22 @@
     <span class="corner br"></span>
 
     <div class="panel-title">
-      <span>重点单位预警</span>
+      <span>重点问题整改跟踪</span>
     </div>
 
     <div class="panel-subtitle">
       <span class="city-chip">{{ currentCity }}</span>
-      <span class="summary-chip warning">预警 {{ warningCount }}</span>
-      <span class="summary-chip follow">待跟进 {{ followCount }}</span>
+      <span class="summary-chip warning">逾期 {{ warningCount }}</span>
+      <span class="summary-chip follow">整改中 {{ followCount }}</span>
       <span class="summary-chip status">
-        {{ shouldAutoRotate ? '自动巡检' : '静态展示' }}
+        {{ shouldAutoRotate ? '自动巡检' : '整改清单' }}
       </span>
     </div>
 
     <div class="table-header">
-      <span>城市 / 单位</span>
-      <span>完成率</span>
-      <span>状态</span>
+      <span>城市 / 评价对象</span>
+      <span>综合得分</span>
+      <span>整改状态</span>
     </div>
 
     <div

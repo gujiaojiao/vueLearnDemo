@@ -4,7 +4,7 @@
     <span class="corner bl"></span>
     <span class="corner br"></span>
     <div class="chart-title">
-      <span>接种单位数量趋势</span>
+      <span>指标评价完成趋势</span>
     </div>
     <div class="chart-wrapper" ref="chartRef"></div>
   </div>
@@ -17,20 +17,20 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 const chartRef = ref<HTMLElement>()
 let chartInstance: echarts.ECharts | null = null
 
-// Mock数据：近12个月接种单位数量趋势
+// Mock数据：近12个月指标评价完成趋势
 const trendData = [
-  { month: '2025-05', count: 980, label: '5月' },
-  { month: '2025-06', count: 995, label: '6月' },
-  { month: '2025-07', count: 1010, label: '7月' },
-  { month: '2025-08', count: 1025, label: '8月' },
-  { month: '2025-09', count: 1038, label: '9月' },
-  { month: '2025-10', count: 1050, label: '10月' },
-  { month: '2025-11', count: 1062, label: '11月' },
-  { month: '2025-12', count: 1075, label: '12月' },
-  { month: '2026-01', count: 1085, label: '1月' },
-  { month: '2026-02', count: 1092, label: '2月' },
-  { month: '2026-03', count: 1098, label: '3月' },
-  { month: '2026-04', count: 1102, label: '4月' },
+  { month: '2025-05', count: 632, label: '5月' },
+  { month: '2025-06', count: 714, label: '6月' },
+  { month: '2025-07', count: 806, label: '7月' },
+  { month: '2025-08', count: 928, label: '8月' },
+  { month: '2025-09', count: 1047, label: '9月' },
+  { month: '2025-10', count: 1195, label: '10月' },
+  { month: '2025-11', count: 1328, label: '11月' },
+  { month: '2025-12', count: 1452, label: '12月' },
+  { month: '2026-01', count: 1536, label: '1月' },
+  { month: '2026-02', count: 1604, label: '2月' },
+  { month: '2026-03', count: 1671, label: '3月' },
+  { month: '2026-04', count: 1724, label: '4月' },
 ]
 
 const getChartOptions = (width: number, height: number) => {
@@ -46,7 +46,7 @@ const getChartOptions = (width: number, height: number) => {
         return `
           <div style="padding: 6px 10px;">
             <div style="font-weight: bold; color: #e0f7fa;">${item.label}</div>
-            <div style="color: #4fc3f7;">接种单位: ${data.value} 家</div>
+            <div style="color: #4fc3f7;">完成指标评价: ${data.value} 项</div>
           </div>
         `
       },
@@ -82,8 +82,8 @@ const getChartOptions = (width: number, height: number) => {
     },
     yAxis: {
       type: 'value',
-      min: 950,
-      max: 1150,
+      min: 500,
+      max: 1800,
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: {
@@ -99,7 +99,7 @@ const getChartOptions = (width: number, height: number) => {
     },
     series: [
       {
-        name: '接种单位',
+        name: '完成指标评价',
         type: 'line',
         smooth: true,
         symbol: 'circle',

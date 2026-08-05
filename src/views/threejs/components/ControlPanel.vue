@@ -4,7 +4,7 @@
     <span class="corner bl"></span>
     <span class="corner br"></span>
     <div class="panel-title">
-      <span>特效控制</span>
+      <span>评价地图视图</span>
     </div>
     <div class="panel-content">
       <button
@@ -13,7 +13,7 @@
         @click="$emit('toggleFlyEffect')"
       >
         <span class="btn-icon">◈</span>
-        <span class="btn-text">飞线特效</span>
+        <span class="btn-text">数据流向</span>
         <span class="btn-status">{{ flyEffectActive ? 'ON' : 'OFF' }}</span>
       </button>
       <button
@@ -22,7 +22,7 @@
         @click="$emit('toggleParticleEffect')"
       >
         <span class="btn-icon">◆</span>
-        <span class="btn-text">粒子特效</span>
+        <span class="btn-text">指标巡航</span>
         <span class="btn-status">{{ particleEffect ? 'ON' : 'OFF' }}</span>
       </button>
     </div>

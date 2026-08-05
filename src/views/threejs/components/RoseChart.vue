@@ -5,7 +5,7 @@
     <span class="corner bl"></span>
     <span class="corner br"></span>
     <div class="chart-title">
-      <span>江苏省13市接种单位数量</span>
+      <span>区县综合评价对象分布</span>
     </div>
     <div class="chart-wrapper" ref="chartRef"></div>
   </div>
@@ -18,21 +18,11 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 const chartRef = ref<HTMLElement>()
 let chartInstance: echarts.ECharts | null = null
 
-// Mock数据：江苏13市接种单位数量
+// Mock数据：三类综合评价对象数量
 const mockData = [
-  { name: '南京市', value: 186 },
-  { name: '苏州市', value: 152 },
-  { name: '无锡市', value: 128 },
-  { name: '常州市', value: 95 },
-  { name: '南通市', value: 88 },
-  { name: '徐州市', value: 76 },
-  { name: '扬州市', value: 65 },
-  { name: '盐城市', value: 58 },
-  { name: '泰州市', value: 52 },
-  { name: '镇江市', value: 45 },
-  { name: '淮安市', value: 42 },
-  { name: '连云港市', value: 38 },
-  { name: '宿迁市', value: 32 },
+  { name: '区县评价', value: 96 },
+  { name: '普通接种单位评价', value: 1248 },
+  { name: '狂犬接种门诊评价', value: 186 },
 ]
 
 // 根据容器尺寸计算图表配置
@@ -46,7 +36,7 @@ const getChartOptions = (width: number, height: number) => {
   return {
     tooltip: {
       trigger: 'item',
-      formatter: '{b}<br/>接种单位: {c} 家 ({d}%)',
+      formatter: '{b}<br/>参评对象: {c} 家 ({d}%)',
       backgroundColor: 'rgba(10, 20, 40, 0.9)',
       borderColor: '#4fc3f7',
       borderWidth: 1,
@@ -55,7 +45,7 @@ const getChartOptions = (width: number, height: number) => {
     },
     series: [
       {
-        name: '接种单位',
+        name: '参评对象',
         type: 'pie',
         radius: [radiusInner, radiusOuter],
         center: ['50%', '55%'],

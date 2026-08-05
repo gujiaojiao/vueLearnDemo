@@ -1,7 +1,7 @@
 <template>
   <div class="header-bar">
     <div class="header-title">
-      <span class="title-text">江苏省疫苗接种管理可视化平台</span>
+      <span class="title-text">XX省免疫规划综合评价系统</span>
       <span class="title-glow"></span>
     </div>
     <button class="exit-btn" @click="handleExit">
